@@ -1,6 +1,7 @@
 # Astral
 
 ![Action](https://github.com/sj14/astral/workflows/Go/badge.svg)
+[![Go Report Card](https://goreportcard.com/badge/github.com/sj14/astral)](https://goreportcard.com/report/github.com/sj14/astral)
 [![GoDoc](https://godoc.org/github.com/sj14/astral?status.png)](https://godoc.org/github.com/sj14/astral)
 
 Calculations for the position of the sun and moon.
