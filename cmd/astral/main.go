@@ -4,6 +4,8 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"sort"
+	"strings"
 	"time"
 
 	"github.com/sj14/astral"
@@ -26,24 +28,18 @@ func main() {
 		log.Fatalf("failed parsing time: %v\n", err)
 	}
 
-	fmt.Printf("%v\n", t.Format(time.UnixDate))
-	fmt.Printf("Latitude %v Longitude %v Elevation %v\n", *latFlag, *longFlag, *elevationFlag)
-
-	// sun := astral.Sun(observer, now, astral.DepressionCivil)
-	// fmt.Printf("sun at %+v\n", sun)
-
-	dawn, err := astral.Dawn(observer, t, astral.DepressionCivil)
+	dawnCivil, err := astral.Dawn(observer, t, astral.DepressionCivil)
 	if err != nil {
 		log.Println(err)
 	}
-	fmt.Printf("%v Dawn\n", dawn.Format(*formatFlag))
-
-	blueStart, blueEnd, err := astral.BlueHour(observer, t, astral.SunDirectionRising)
+	dawnAstronomical, err := astral.Dawn(observer, t, astral.DepressionAstronomical)
 	if err != nil {
 		log.Println(err)
 	}
-	fmt.Printf("%v Blue Hour Start\n", blueStart.Format(*formatFlag))
-	fmt.Printf("%v Blue Hour End\n", blueEnd.Format(*formatFlag))
+	dawnNautical, err := astral.Dawn(observer, t, astral.DepressionNautical)
+	if err != nil {
+		log.Println(err)
+	}
 
 	goldenRisingStart, goldenRisingEnd, err := astral.GoldenHour(observer, t, astral.SunDirectionRising)
 	if err != nil {
@@ -55,12 +51,12 @@ func main() {
 		log.Println(err)
 	}
 
-	fmt.Printf("%v Golden Hour Start\n", goldenRisingStart.Format(*formatFlag))
-	fmt.Printf("%v Sunrise\n", sunrise.Format(*formatFlag))
-	fmt.Printf("%v Golden Hour End\n", goldenRisingEnd.Format(*formatFlag))
+	sunriseNextDay, err := astral.Sunrise(observer, t.Add(24*time.Hour))
+	if err != nil {
+		log.Println(err)
+	}
 
 	noon := astral.Noon(observer, t)
-	fmt.Printf("%v Noon\n", noon.Format(*formatFlag))
 
 	goldenSettingStart, goldenSettingEnd, err := astral.GoldenHour(observer, t, astral.SunDirectionSetting)
 	if err != nil {
@@ -72,61 +68,85 @@ func main() {
 		log.Println(err)
 	}
 
-	fmt.Printf("%v Golden Hour Start\n", goldenSettingStart.Format(*formatFlag))
-	fmt.Printf("%v Sunset\n", sunset.Format(*formatFlag))
-	fmt.Printf("%v Golden Hour End\n", goldenSettingEnd.Format(*formatFlag))
-
-	blueSettingStart, blueSettingEnd, err := astral.BlueHour(observer, t, astral.SunDirectionSetting)
+	duskCivil, err := astral.Dusk(observer, t, astral.DepressionCivil)
 	if err != nil {
 		log.Println(err)
 	}
-	fmt.Printf("%v Blue Hour Start\n", blueSettingStart.Format(*formatFlag))
-	fmt.Printf("%v Blue Hour End\n", blueSettingEnd.Format(*formatFlag))
-
-	dusk, err := astral.Dusk(observer, t, astral.DepressionCivil)
+	duskAstronomical, err := astral.Dusk(observer, t, astral.DepressionAstronomical)
 	if err != nil {
 		log.Println(err)
 	}
-	fmt.Printf("%v Dusk\n", dusk.Format(*formatFlag))
-
-	// daylightStart, daylightEnd, err := astral.Daylight(observer, now)
-	// if err != nil {
-	// 	log.Println(err)
-	// }
-	// fmt.Printf("daylight start: %v daylight end: %v\n", daylightStart, daylightEnd)
-
-	// nightStart, nightEnd, err := astral.Night(observer, now)
-	// if err != nil {
-	// 	log.Println(err)
-	// }
-	// fmt.Printf("night start: %v night end: %v\n", nightStart, nightEnd)
-
-	// rahukaalamStart, rahukaalamEnd := astral.Rahukaalam(observer, now, true)
-	// fmt.Printf("rahukaalam start: %v rahukaalam end: %v\n", rahukaalamStart, rahukaalamEnd)
-
-	// elevation := astral.Elevation(observer, t, true)
-	// elevationTime, err := astral.TimeAtElevation(observer, elevation, t, astral.SunDirectionSetting)
-	// if err != nil {
-	// 	log.Println(err)
-	// }
-	// fmt.Printf("%v Elevation\n", elevationTime.Format(*formatFlag))
+	duskNautical, err := astral.Dusk(observer, t, astral.DepressionNautical)
+	if err != nil {
+		log.Println(err)
+	}
 
 	midnight := astral.Midnight(observer, t)
-	fmt.Printf("%v Midnight\n", midnight.Format(*formatFlag))
-
-	// twilightStart, twilightEnd, err := astral.Twilight(observer, now, astral.SunDirectionSetting) // same as sunset and dusk
-	// if err != nil {
-	// 	log.Println(err)
-	// }
-	// fmt.Printf("twilight start: %v twilight end: %v\n", twilightStart, twilightEnd)
-
-	// zenith, azimuth := astral.ZenithAndAzimuth(observer, now, true)
-	// fmt.Printf("zenith: %v azimuth: %v\n", zenith, azimuth)
 
 	moonPhase := astral.MoonPhase(t)
 	moonDesc, err := astral.MoonPhaseDescription(moonPhase)
 	if err != nil {
 		log.Fatalf("failed parsing moon phase: %v", err)
 	}
-	fmt.Printf("Moon Phase: %v (%v)\n", moonDesc, moonPhase)
+
+	dashes := "┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈"
+
+	dates := make(map[time.Time]string)
+	dates[t] = dashes
+	dates[dawnAstronomical] = "Dawn (Astronomical)"
+	dates[dawnNautical] = "Dawn (Nautical)"
+	dates[dawnCivil] = "Dawn (Civil)         Twilight Start    Blue Hour Start"
+	dates[goldenRisingStart] = "Golden Hour Start                      Blue Hour End"
+	dates[sunrise] = "Sunrise              Twilight End"
+	dates[goldenRisingEnd] = "Golden Hour End"
+	dates[noon] = "Noon"
+	dates[goldenSettingStart] = "Golden Hour Start"
+	dates[sunset] = "Sunset               Twilight Start"
+	dates[goldenSettingEnd] = "Golden Hour End                        Blue Hour Start"
+	dates[duskCivil] = "Dusk (Civil)         Twilight End      Blue Hour End "
+	dates[duskAstronomical] = "Dusk (Astronomical)"
+	dates[duskNautical] = "Dusk (Nautical)"
+	dates[midnight] = "Midnight"
+
+	var sortedTimes timeSlice
+
+	for key := range dates {
+		sortedTimes = append(sortedTimes, key)
+	}
+	sort.Sort(sortedTimes)
+
+	fmt.Printf("Date/Time\t%v\n", t.Format(time.UnixDate))
+	fmt.Printf("Latitude\t%v\nLongitude\t%v\nElevation\t%v\n", *latFlag, *longFlag, *elevationFlag)
+	fmt.Println()
+	fmt.Printf("Daylight\t%v\n", sunset.Sub(sunrise).Truncate(1*time.Second))
+	fmt.Printf("Night-Time\t%v\n", sunriseNextDay.Sub(sunset).Truncate(1*time.Second))
+	fmt.Printf("Moon Phase\t%v (%v)\n", moonDesc, moonPhase)
+	fmt.Println()
+
+	for _, key := range sortedTimes {
+		if dates[key] == dashes {
+			hhMMss := "15:04:05"
+			preDashes := len(*formatFlag) - len(hhMMss) - 1
+			if preDashes < 0 {
+				preDashes = 0
+			}
+			fmt.Printf("%v %v\n", key.Format(strings.Repeat("┈", preDashes)+" "+hhMMss), dates[key])
+			continue
+		}
+		fmt.Printf("%v %v\n", key.Format(*formatFlag), dates[key])
+	}
+}
+
+type timeSlice []time.Time
+
+func (p timeSlice) Len() int {
+	return len(p)
+}
+
+func (p timeSlice) Less(i, j int) bool {
+	return p[i].Before(p[j])
+}
+
+func (p timeSlice) Swap(i, j int) {
+	p[i], p[j] = p[j], p[i]
 }

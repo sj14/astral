@@ -56,21 +56,28 @@ Usage of astral:
 
 ```text
 $ astral -lat 51.58 -long 6.52
-Sun Apr 18 11:12:45 CEST 2021
-Latitude 51.58 Longitude 6.52 Elevation 0
-Apr 18 05:55:07 Dawn
-Apr 18 05:55:07 Blue Hour Start
-Apr 18 06:09:04 Blue Hour End
-Apr 18 06:09:04 Golden Hour Start
-Apr 18 06:31:44 Sunrise
-Apr 18 07:15:56 Golden Hour End
-Apr 18 13:33:18 Noon
-Apr 18 19:51:24 Golden Hour Start
-Apr 18 20:35:45 Sunset
-Apr 18 20:58:33 Golden Hour End
-Apr 18 20:58:33 Blue Hour Start
-Apr 18 21:12:35 Blue Hour End
-Apr 18 21:12:35 Dusk
-Apr 19 01:33:13 Midnight
-Moon Phase: New Moon (5.47788888888889)
+Date/Time       Wed Apr 21 17:30:26 CEST 2021
+Latitude        51.58
+Longitude       6.52
+Elevation       0
+
+Daylight        14h15m19s
+Night-Time      9h42m37s
+Moon Phase      First Quarter (8.122333333333334)
+
+Apr 21 04:09:44 Dawn (Astronomical)
+Apr 21 05:02:44 Dawn (Nautical)
+Apr 21 05:48:21 Dawn (Civil)         Twilight Start    Blue Hour Start
+Apr 21 06:02:31 Golden Hour Start                      Blue Hour End
+Apr 21 06:25:28 Sunrise              Twilight End
+Apr 21 07:10:01 Golden Hour End
+Apr 21 13:32:40 Noon
+┈┈┈┈┈┈ 17:30:26 ┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+Apr 21 19:56:03 Golden Hour Start
+Apr 21 20:40:47 Sunset               Twilight Start
+Apr 21 21:03:52 Golden Hour End                        Blue Hour Start
+Apr 21 21:18:07 Dusk (Civil)         Twilight End      Blue Hour End 
+Apr 21 22:04:06 Dusk (Nautical)
+Apr 21 22:57:48 Dusk (Astronomical)
+Apr 22 01:32:35 Midnight
 ```
