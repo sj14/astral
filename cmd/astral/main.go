@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/logrusorgru/aurora/v3"
 	"github.com/sj14/astral"
 )
 
@@ -89,24 +90,24 @@ func main() {
 		log.Fatalf("failed parsing moon phase: %v", err)
 	}
 
-	dashes := "┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈"
+	dashes := "┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈"
 
-	dates := make(map[time.Time]string)
-	dates[t] = dashes
-	dates[dawnAstronomical] = "Dawn (Astronomical)"
-	dates[dawnNautical] = "Dawn (Nautical)"
-	dates[dawnCivil] = "Dawn (Civil)         Twilight Start    Blue Hour Start"
-	dates[goldenRisingStart] = "Golden Hour Start                      Blue Hour End"
-	dates[sunrise] = "Sunrise              Twilight End"
-	dates[goldenRisingEnd] = "Golden Hour End"
-	dates[noon] = "Noon"
-	dates[goldenSettingStart] = "Golden Hour Start"
-	dates[sunset] = "Sunset               Twilight Start"
-	dates[goldenSettingEnd] = "Golden Hour End                        Blue Hour Start"
-	dates[duskCivil] = "Dusk (Civil)         Twilight End      Blue Hour End "
-	dates[duskAstronomical] = "Dusk (Astronomical)"
-	dates[duskNautical] = "Dusk (Nautical)"
-	dates[midnight] = "Midnight"
+	dates := make(map[time.Time]colorDesc)
+	dates[t] = colorDesc{desc: dashes}
+	dates[dawnAstronomical] = colorDesc{color: aurora.BgGray(8, " "), desc: " Dawn (Astronomical)"}
+	dates[dawnNautical] = colorDesc{color: aurora.BgGray(15, " "), desc: " Dawn (Nautical)"}
+	dates[dawnCivil] = colorDesc{color: aurora.BgIndex(111, " "), desc: " Dawn (Civil)         Twilight Start    Blue Hour Start"}
+	dates[goldenRisingStart] = colorDesc{color: aurora.BgIndex(208, " "), desc: " Golden Hour Start                      Blue Hour End"}
+	dates[sunrise] = colorDesc{color: aurora.BgIndex(214, " "), desc: " Sunrise              Twilight End"}
+	dates[goldenRisingEnd] = colorDesc{color: aurora.BgIndex(220, " "), desc: " Golden Hour End"}
+	dates[noon] = colorDesc{color: aurora.BgIndex(226, " "), desc: " Noon"}
+	dates[goldenSettingStart] = colorDesc{color: aurora.BgIndex(214, " "), desc: " Golden Hour Start"}
+	dates[sunset] = colorDesc{color: aurora.BgIndex(208, " "), desc: " Sunset               Twilight Start"}
+	dates[goldenSettingEnd] = colorDesc{color: aurora.BgIndex(111, " "), desc: " Golden Hour End                        Blue Hour Start"}
+	dates[duskCivil] = colorDesc{color: aurora.BgGray(18, " "), desc: " Dusk (Civil)         Twilight End      Blue Hour End "}
+	dates[duskNautical] = colorDesc{color: aurora.BgGray(15, " "), desc: " Dusk (Nautical)"}
+	dates[duskAstronomical] = colorDesc{color: aurora.BgGray(8, " "), desc: " Dusk (Astronomical)"}
+	dates[midnight] = colorDesc{color: aurora.BgBlack(" "), desc: " Midnight"}
 
 	var sortedTimes timeSlice
 
@@ -123,18 +124,26 @@ func main() {
 	fmt.Printf("Moon Phase\t%v (%v)\n", moonDesc, moonPhase)
 	fmt.Println()
 
+	lastColor := aurora.BgBlack(" ")
 	for _, key := range sortedTimes {
-		if dates[key] == dashes {
+		if dates[key].desc == dashes {
 			hhMMss := "15:04:05"
 			preDashes := len(*formatFlag) - len(hhMMss) - 1
 			if preDashes < 0 {
 				preDashes = 0
 			}
-			fmt.Printf("%v %v\n", key.Format(strings.Repeat("┈", preDashes)+" "+hhMMss), dates[key])
+			fmt.Printf("%v %v %v\n", key.Format(strings.Repeat("┈", preDashes)+" "+hhMMss), lastColor, dates[key].desc)
 			continue
 		}
-		fmt.Printf("%v %v\n", key.Format(*formatFlag), dates[key])
+		lastColor = dates[key].color
+
+		fmt.Printf("%v %v %v\n", key.Format(*formatFlag), dates[key].color, dates[key].desc)
 	}
+}
+
+type colorDesc struct {
+	color aurora.Value
+	desc  string
 }
 
 type timeSlice []time.Time
