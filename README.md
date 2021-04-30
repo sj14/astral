@@ -42,8 +42,6 @@ go get github.com/sj14/astral/cmd/astral
 Usage of astral:
   -elev float
         elevation of the observer
-  -format string
-        time output format according to Go parsing (default "Jan _2 15:04:05")
   -lat float
         latitude of the observer
   -long float
