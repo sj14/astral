@@ -56,28 +56,28 @@ Usage of astral:
 
 ```text
 $ astral -lat 51.58 -long 6.52
-Date/Time       Wed Apr 21 17:30:26 CEST 2021
-Latitude        51.58
-Longitude       6.52
-Elevation       0
+Date/Time	Fri Apr 30 21:12:11 CEST 2021
+Latitude	51.58
+Longitude	6.52
+Elevation	0
 
-Daylight        14h15m19s
-Night-Time      9h42m37s
-Moon Phase      First Quarter (8.122333333333334)
+Daylight	14h48m11s
+Night-Time	9h9m55s
+Moon Phase	Full Moon (17.611222222222224)
 
-Apr 21 04:09:44 Dawn (Astronomical)
-Apr 21 05:02:44 Dawn (Nautical)
-Apr 21 05:48:21 Dawn (Civil)         Twilight Start    Blue Hour Start
-Apr 21 06:02:31 Golden Hour Start                      Blue Hour End
-Apr 21 06:25:28 Sunrise              Twilight End
-Apr 21 07:10:01 Golden Hour End
-Apr 21 13:32:40 Noon
-┈┈┈┈┈┈ 17:30:26 ┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-Apr 21 19:56:03 Golden Hour Start
-Apr 21 20:40:47 Sunset               Twilight Start
-Apr 21 21:03:52 Golden Hour End                        Blue Hour Start
-Apr 21 21:18:07 Dusk (Civil)         Twilight End      Blue Hour End 
-Apr 21 22:04:06 Dusk (Nautical)
-Apr 21 22:57:48 Dusk (Astronomical)
-Apr 22 01:32:35 Midnight
+Apr 30 03:39 (-17:32)   Dawn (Astronomical)
+Apr 30 04:39 (-16:32)   Dawn (Nautical)
+Apr 30 05:28 (-15:43)   Dawn (Civil)         Twilight Start    Blue Hour Start
+Apr 30 05:43 (-15:28)   Golden Hour Start                      Blue Hour End
+Apr 30 06:07 (-15:04)   Sunrise              Twilight End
+Apr 30 06:53 (-14:18)   Golden Hour End
+Apr 30 13:31 (-07:41)   Noon
+Apr 30 20:09 (-01:02)   Golden Hour Start
+Apr 30 20:55 (-00:16)   Sunset               Twilight Start
+┈┈┈┈┈┈ 21:12 ┈┈┈┈┈┈┈┈   ┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+Apr 30 21:19 (+00:07)   Golden Hour End                        Blue Hour Start
+Apr 30 21:34 (+00:22)   Dusk (Civil)         Twilight End      Blue Hour End
+Apr 30 22:24 (+01:12)   Dusk (Nautical)
+Apr 30 23:25 (+02:13)   Dusk (Astronomical)
+May  1 01:31 (+04:18)   Midnight
 ```
