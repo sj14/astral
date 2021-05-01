@@ -4,15 +4,21 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"math"
+	"sort"
+	"strings"
 	"time"
 
+	"github.com/logrusorgru/aurora/v3"
 	"github.com/sj14/astral"
 )
 
 func main() {
 	var (
+		format = "Jan _2 15:04"
+		hhMM   = "15:04"
+
 		timeFlag      = flag.String("time", time.Now().Format(time.RFC3339), "day/time used for the calculation")
-		formatFlag    = flag.String("format", "Jan _2 15:04:05", "time output format according to Go parsing")
 		latFlag       = flag.Float64("lat", 0, "latitude of the observer")
 		longFlag      = flag.Float64("long", 0, "longitude of the observer")
 		elevationFlag = flag.Float64("elev", 0, "elevation of the observer")
@@ -26,24 +32,18 @@ func main() {
 		log.Fatalf("failed parsing time: %v\n", err)
 	}
 
-	fmt.Printf("%v\n", t.Format(time.UnixDate))
-	fmt.Printf("Latitude %v Longitude %v Elevation %v\n", *latFlag, *longFlag, *elevationFlag)
-
-	// sun := astral.Sun(observer, now, astral.DepressionCivil)
-	// fmt.Printf("sun at %+v\n", sun)
-
-	dawn, err := astral.Dawn(observer, t, astral.DepressionCivil)
+	dawnCivil, err := astral.Dawn(observer, t, astral.DepressionCivil)
 	if err != nil {
 		log.Println(err)
 	}
-	fmt.Printf("%v Dawn\n", dawn.Format(*formatFlag))
-
-	blueStart, blueEnd, err := astral.BlueHour(observer, t, astral.SunDirectionRising)
+	dawnAstronomical, err := astral.Dawn(observer, t, astral.DepressionAstronomical)
 	if err != nil {
 		log.Println(err)
 	}
-	fmt.Printf("%v Blue Hour Start\n", blueStart.Format(*formatFlag))
-	fmt.Printf("%v Blue Hour End\n", blueEnd.Format(*formatFlag))
+	dawnNautical, err := astral.Dawn(observer, t, astral.DepressionNautical)
+	if err != nil {
+		log.Println(err)
+	}
 
 	goldenRisingStart, goldenRisingEnd, err := astral.GoldenHour(observer, t, astral.SunDirectionRising)
 	if err != nil {
@@ -55,12 +55,12 @@ func main() {
 		log.Println(err)
 	}
 
-	fmt.Printf("%v Golden Hour Start\n", goldenRisingStart.Format(*formatFlag))
-	fmt.Printf("%v Sunrise\n", sunrise.Format(*formatFlag))
-	fmt.Printf("%v Golden Hour End\n", goldenRisingEnd.Format(*formatFlag))
+	sunriseNextDay, err := astral.Sunrise(observer, t.Add(24*time.Hour))
+	if err != nil {
+		log.Println(err)
+	}
 
 	noon := astral.Noon(observer, t)
-	fmt.Printf("%v Noon\n", noon.Format(*formatFlag))
 
 	goldenSettingStart, goldenSettingEnd, err := astral.GoldenHour(observer, t, astral.SunDirectionSetting)
 	if err != nil {
@@ -72,61 +72,110 @@ func main() {
 		log.Println(err)
 	}
 
-	fmt.Printf("%v Golden Hour Start\n", goldenSettingStart.Format(*formatFlag))
-	fmt.Printf("%v Sunset\n", sunset.Format(*formatFlag))
-	fmt.Printf("%v Golden Hour End\n", goldenSettingEnd.Format(*formatFlag))
-
-	blueSettingStart, blueSettingEnd, err := astral.BlueHour(observer, t, astral.SunDirectionSetting)
+	duskCivil, err := astral.Dusk(observer, t, astral.DepressionCivil)
 	if err != nil {
 		log.Println(err)
 	}
-	fmt.Printf("%v Blue Hour Start\n", blueSettingStart.Format(*formatFlag))
-	fmt.Printf("%v Blue Hour End\n", blueSettingEnd.Format(*formatFlag))
-
-	dusk, err := astral.Dusk(observer, t, astral.DepressionCivil)
+	duskAstronomical, err := astral.Dusk(observer, t, astral.DepressionAstronomical)
 	if err != nil {
 		log.Println(err)
 	}
-	fmt.Printf("%v Dusk\n", dusk.Format(*formatFlag))
-
-	// daylightStart, daylightEnd, err := astral.Daylight(observer, now)
-	// if err != nil {
-	// 	log.Println(err)
-	// }
-	// fmt.Printf("daylight start: %v daylight end: %v\n", daylightStart, daylightEnd)
-
-	// nightStart, nightEnd, err := astral.Night(observer, now)
-	// if err != nil {
-	// 	log.Println(err)
-	// }
-	// fmt.Printf("night start: %v night end: %v\n", nightStart, nightEnd)
-
-	// rahukaalamStart, rahukaalamEnd := astral.Rahukaalam(observer, now, true)
-	// fmt.Printf("rahukaalam start: %v rahukaalam end: %v\n", rahukaalamStart, rahukaalamEnd)
-
-	// elevation := astral.Elevation(observer, t, true)
-	// elevationTime, err := astral.TimeAtElevation(observer, elevation, t, astral.SunDirectionSetting)
-	// if err != nil {
-	// 	log.Println(err)
-	// }
-	// fmt.Printf("%v Elevation\n", elevationTime.Format(*formatFlag))
+	duskNautical, err := astral.Dusk(observer, t, astral.DepressionNautical)
+	if err != nil {
+		log.Println(err)
+	}
 
 	midnight := astral.Midnight(observer, t)
-	fmt.Printf("%v Midnight\n", midnight.Format(*formatFlag))
-
-	// twilightStart, twilightEnd, err := astral.Twilight(observer, now, astral.SunDirectionSetting) // same as sunset and dusk
-	// if err != nil {
-	// 	log.Println(err)
-	// }
-	// fmt.Printf("twilight start: %v twilight end: %v\n", twilightStart, twilightEnd)
-
-	// zenith, azimuth := astral.ZenithAndAzimuth(observer, now, true)
-	// fmt.Printf("zenith: %v azimuth: %v\n", zenith, azimuth)
 
 	moonPhase := astral.MoonPhase(t)
 	moonDesc, err := astral.MoonPhaseDescription(moonPhase)
 	if err != nil {
 		log.Fatalf("failed parsing moon phase: %v", err)
 	}
-	fmt.Printf("Moon Phase: %v (%v)\n", moonDesc, moonPhase)
+
+	dashes := "┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈"
+
+	dates := make(map[time.Time]colorDesc)
+	dates[t] = colorDesc{desc: dashes}
+	dates[dawnAstronomical] = colorDesc{color: aurora.BgGray(8, " "), desc: "Dawn (Astronomical)"}
+	dates[dawnNautical] = colorDesc{color: aurora.BgGray(15, " "), desc: "Dawn (Nautical)"}
+	dates[dawnCivil] = colorDesc{color: aurora.BgIndex(111, " "), desc: "Dawn (Civil)         Twilight Start    Blue Hour Start"}
+	dates[goldenRisingStart] = colorDesc{color: aurora.BgIndex(208, " "), desc: "Golden Hour Start                      Blue Hour End"}
+	dates[sunrise] = colorDesc{color: aurora.BgIndex(214, " "), desc: "Sunrise              Twilight End"}
+	dates[goldenRisingEnd] = colorDesc{color: aurora.BgIndex(226, " "), desc: "Golden Hour End"}
+	dates[noon] = colorDesc{color: aurora.BgIndex(226, " "), desc: "Noon"}
+	dates[goldenSettingStart] = colorDesc{color: aurora.BgIndex(214, " "), desc: "Golden Hour Start"}
+	dates[sunset] = colorDesc{color: aurora.BgIndex(208, " "), desc: "Sunset               Twilight Start"}
+	dates[goldenSettingEnd] = colorDesc{color: aurora.BgIndex(111, " "), desc: "Golden Hour End                        Blue Hour Start"}
+	dates[duskCivil] = colorDesc{color: aurora.BgGray(18, " "), desc: "Dusk (Civil)         Twilight End      Blue Hour End "}
+	dates[duskNautical] = colorDesc{color: aurora.BgGray(15, " "), desc: "Dusk (Nautical)"}
+	dates[duskAstronomical] = colorDesc{color: aurora.BgGray(8, " "), desc: "Dusk (Astronomical)"}
+	dates[midnight] = colorDesc{color: aurora.BgBlack(" "), desc: "Midnight"}
+
+	var sortedTimes timeSlice
+
+	for key := range dates {
+		sortedTimes = append(sortedTimes, key)
+	}
+	sort.Sort(sortedTimes)
+
+	fmt.Printf("Date/Time\t%v\n", t.Format(time.UnixDate))
+	fmt.Printf("Latitude\t%v\nLongitude\t%v\nElevation\t%v\n", *latFlag, *longFlag, *elevationFlag)
+	fmt.Println()
+	fmt.Printf("Daylight\t%v\n", sunset.Sub(sunrise).Truncate(1*time.Second))
+	fmt.Printf("Night-Time\t%v\n", sunriseNextDay.Sub(sunset).Truncate(1*time.Second))
+	fmt.Printf("Moon Phase\t%v (%v)\n", moonDesc, moonPhase)
+	fmt.Println()
+
+	lastColor := aurora.BgBlack(" ")
+	for _, key := range sortedTimes {
+
+		// calculate when the particular phase happend or will happen
+		inHours := math.Abs(key.Sub(t).Truncate(1 * time.Hour).Hours())
+		inMinutes := int(math.Abs((key.Sub(t).Truncate(1 * time.Minute).Minutes()))) % 60
+
+		agoOrUntil := fmt.Sprintf("%02.0f:%02d", inHours, inMinutes)
+		if key.Before(t) {
+			agoOrUntil = fmt.Sprintf("-%s", agoOrUntil)
+		} else {
+			agoOrUntil = fmt.Sprintf("+%s", agoOrUntil)
+		}
+
+		// edge case for the given time
+		if dates[key].desc == dashes {
+			prefixDashesCount := len(format) - len(hhMM) - 1
+			if prefixDashesCount < 0 {
+				prefixDashesCount = 0
+			}
+
+			prefixDashes := key.Format(strings.Repeat("┈", prefixDashesCount))
+			midDashes := strings.Repeat("┈", len(agoOrUntil)+2)
+			t := key.Truncate(1 * time.Minute).Format(hhMM)
+
+			fmt.Printf("%v %v %v %v %v\n", prefixDashes, t, midDashes, lastColor, dates[key].desc)
+			continue
+		}
+
+		lastColor = dates[key].color
+		fmt.Printf("%v (%v) %v %v\n", key.Format(format), agoOrUntil, dates[key].color, dates[key].desc)
+	}
+}
+
+type colorDesc struct {
+	color aurora.Value
+	desc  string
+}
+
+type timeSlice []time.Time
+
+func (p timeSlice) Len() int {
+	return len(p)
+}
+
+func (p timeSlice) Less(i, j int) bool {
+	return p[i].Before(p[j])
+}
+
+func (p timeSlice) Swap(i, j int) {
+	p[i], p[j] = p[j], p[i]
 }
