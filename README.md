@@ -34,8 +34,16 @@ Besides the package for usage in you own programs, we also provide a tool for sh
 
 ### Installation
 
+#### Homebrew
+
 ```text
-go get github.com/sj14/astral/cmd/astral
+brew install sj14/tap/astral
+```
+
+#### Manually
+
+```text
+go get -u github.com/sj14/astral/cmd/astral
 ```
 
 ### Usage
