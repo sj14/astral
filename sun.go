@@ -299,15 +299,11 @@ func time_of_transit(observer Observer, date time.Time, zenith float64, directio
 		latitude = -89.8
 	}
 
-	adjustment_for_elevation := 0.0
-	if observer.Elevation > 0.0 {
-		adjustment_for_elevation = adjust_to_horizon(observer.Elevation)
-	}
-
 	// TODO:
 	// if isinstance(observer.elevation, float) && observer.elevation > 0.0 {
 	// 	adjustment_for_elevation = adjust_to_horizon(observer.elevation)
-	if observer.Elevation > 0 {
+	adjustment_for_elevation := 0.0
+	if observer.Elevation > 0.0 {
 		adjustment_for_elevation = adjust_to_horizon(observer.Elevation)
 	}
 	// } else if isinstance(observer.elevation, tuple) {
