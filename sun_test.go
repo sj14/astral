@@ -128,7 +128,8 @@ func TestDusk(t *testing.T) {
 		{args: args{observer: london, date: time.Date(2015, 12, 12, 0, 0, 0, 0, time.UTC), depression: DepressionNautical}, want: time.Date(2015, 12, 12, 17, 14, 0, 0, time.UTC)},
 		{args: args{observer: london, date: time.Date(2015, 12, 25, 0, 0, 0, 0, time.UTC), depression: DepressionNautical}, want: time.Date(2015, 12, 25, 17, 19, 0, 0, time.UTC)},
 		// Astronomical
-
+		{args: args{observer: london, date: time.Date(2015, 12, 25, 0, 0, 0, 0, time.UTC), depression: DepressionAstronomical}, want: time.Date(2015, 12, 25, 17, 59, 0, 0, time.UTC)},
+		{args: args{observer: london, date: time.Date(2021, 30, 6, 0, 0, 0, 0, time.UTC), depression: DepressionAstronomical}, wantErr: true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
