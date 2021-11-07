@@ -164,6 +164,7 @@ func main() {
 type colorDesc struct {
 	color aurora.Value
 	desc  string
+	err   error
 }
 
 type timeSlice []time.Time
