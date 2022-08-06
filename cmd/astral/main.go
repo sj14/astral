@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/logrusorgru/aurora/v3"
-	"github.com/sj14/astral"
+	"github.com/sj14/astral/pkg/astral"
 )
 
 func main() {
