@@ -10,54 +10,35 @@ builds:
     id: "astral"
     env:
       - CGO_ENABLED=0
-      - GO111MODULE=on
     goos:
       - linux
       - darwin
-      - freebsd
-      - openbsd
-      - netbsd
-      - solaris
-      - dragonfly
       - windows
-    goarch:
-      - 386
-      - amd64
-      - arm
-      - arm64
-    goarm:
-      - 6
-      - 7
 archives:
   - id: astral
     builds:
-    - astral
-    wrap_in_directory: true
-    format_overrides:
-      - goos: windows
-        format: zip
-    files:
-      - LICENSE
-      - AUTHORS
-      - README.md
+      - astral
+    format: binary
 checksum:
   name_template: "checksums.txt"
 snapshot:
   name_template: "{{ .Tag }}-next-{{.Commit}}"
-nfpms:
-  - maintainer: Simon Jürgensmeyyer <simon.juergensmeyer@gmail.com>
-    homepage: https://github.com/sj14/astral/
-    description: Calculations for the position of the sun and moon.
-    license: Apache License 2.0
-    formats:
-      - deb
-      - rpm
-    builds:
-      - astral
+# nfpms:
+#   - maintainer: Simon Jürgensmeyyer <simon.juergensmeyer@gmail.com>
+#     homepage: https://github.com/sj14/astral/
+#     description: Calculations for the position of the sun and moon.
+#     license: Apache License 2.0
+#     formats:
+#       - deb
+#       - rpm
+#       - apk # not tested
+#     builds:
+#       - astral
 brews:
   - name: astral
     ids:
       - astral
+    skip_upload: auto
     tap:
       owner: sj14
       name: homebrew-tap
@@ -68,7 +49,7 @@ release:
     name: astral
   disable: false
   draft: false
-  prerelease: false
+  prerelease: auto
 changelog:
   filters:
     exclude:
