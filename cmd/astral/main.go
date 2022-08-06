@@ -15,8 +15,8 @@ import (
 
 func main() {
 	var (
-		format = "Jan _2 15:04"
-		hhMM   = "15:04"
+		dateTimeFormat = "Jan _2 15:04"
+		timeFormat     = "15:04"
 
 		timeFlag      = flag.String("time", time.Now().Format(time.RFC3339), "day/time used for the calculation")
 		latFlag       = flag.Float64("lat", 0, "latitude of the observer")
@@ -143,21 +143,21 @@ func main() {
 
 		// edge case for the given time
 		if dates[key].desc == dashes {
-			prefixDashesCount := len(format) - len(hhMM) - 1
+			prefixDashesCount := len(dateTimeFormat) - len(timeFormat) - 1
 			if prefixDashesCount < 0 {
 				prefixDashesCount = 0
 			}
 
 			prefixDashes := key.Format(strings.Repeat("┈", prefixDashesCount))
 			midDashes := strings.Repeat("┈", len(agoOrUntil)+2)
-			t := key.Truncate(1 * time.Minute).Format(hhMM)
+			t := key.Truncate(1 * time.Minute).Format(timeFormat)
 
 			fmt.Printf("%v %v %v %v %v\n", prefixDashes, t, midDashes, lastColor, dates[key].desc)
 			continue
 		}
 
 		lastColor = dates[key].color
-		fmt.Printf("%v (%v) %v %v\n", key.Format(format), agoOrUntil, dates[key].color, dates[key].desc)
+		fmt.Printf("%v (%v) %v %v\n", key.Format(dateTimeFormat), agoOrUntil, dates[key].color, dates[key].desc)
 	}
 }
 
