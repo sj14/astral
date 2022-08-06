@@ -5,12 +5,20 @@ import (
 	"fmt"
 	"log"
 	"math"
+	"os"
 	"sort"
 	"strings"
 	"time"
 
 	"github.com/logrusorgru/aurora/v3"
 	"github.com/sj14/astral/pkg/astral"
+)
+
+var (
+	// will be replaced during the build process
+	version = "undefined"
+	commit  = "undefined"
+	date    = "undefined"
 )
 
 func main() {
@@ -22,8 +30,16 @@ func main() {
 		latFlag       = flag.Float64("lat", 0, "latitude of the observer")
 		longFlag      = flag.Float64("long", 0, "longitude of the observer")
 		elevationFlag = flag.Float64("elev", 0, "elevation of the observer")
+		versionFlag   = flag.Bool("version", false, fmt.Sprintf("print version information of this release (%v)", version))
 	)
 	flag.Parse()
+
+	if *versionFlag {
+		fmt.Printf("version: %v\n", version)
+		fmt.Printf("commit: %v\n", commit)
+		fmt.Printf("date: %v\n", date)
+		os.Exit(0)
+	}
 
 	observer := astral.Observer{Latitude: *latFlag, Longitude: *longFlag, Elevation: *elevationFlag}
 
