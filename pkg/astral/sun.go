@@ -284,8 +284,7 @@ func time_of_transit(observer Observer, date time.Time, zenith float64, directio
 
 	adjustment_for_refraction := refraction_at_zenith(zenith + adjustment_for_elevation)
 
-	midday := time.Date(date.Year(), date.Month(), date.Day(), 12, 0, 0, 0, date.Location())
-	jd := julianday(midday)
+	jd := julianday(date)
 	jc := jday_to_jcentury(jd)
 	solarDec := sun_declination(jc)
 
