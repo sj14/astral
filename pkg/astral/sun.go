@@ -206,11 +206,6 @@ func hour_angle(latitude float64, declination float64, zenith float64, direction
 	declination_rad := radians(declination)
 	zenith_rad := radians(zenith)
 
-	// n := math.Cos(zenith_rad)
-	// d := math.Cos(latitude_rad) * math.Cos(declination_rad)
-	// t := math.Tan(latitude_rad) * math.Tan(declination_rad)
-	// h := (n / d) - t
-
 	h := (math.Cos(zenith_rad) - math.Sin(latitude_rad)*math.Sin(declination_rad)) / (math.Cos(latitude_rad) * math.Cos(declination_rad))
 
 	hourAngle := math.Acos(h)
