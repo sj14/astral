@@ -23,7 +23,7 @@ var (
 
 func main() {
 	var (
-		dateTimeFormat = "Jan _2 15:04"
+		dateTimeFormat = TimeFormatAstral
 		timeFormat     = "15:04"
 
 		timeFlag      = flag.String("time", time.Now().Format(time.RFC3339), "day/time used for the calculation")
@@ -32,6 +32,7 @@ func main() {
 		elevationFlag = flag.Float64("elev", 0, "elevation of the observer")
 		versionFlag   = flag.Bool("version", false, fmt.Sprintf("print version information of this release (%v)", version))
 	)
+	flag.StringVar(&dateTimeFormat, "dtfmt", dateTimeFormat, "date/time format to use for output")
 	flag.Parse()
 
 	if *versionFlag {
@@ -39,6 +40,12 @@ func main() {
 		fmt.Printf("commit: %v\n", commit)
 		fmt.Printf("date: %v\n", date)
 		os.Exit(0)
+	}
+
+	dateTimeFormat, err := FormatName(dateTimeFormat)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error '-dtfmt': %s", err)
+		return
 	}
 
 	observer := astral.Observer{Latitude: *latFlag, Longitude: *longFlag, Elevation: *elevationFlag}
@@ -194,4 +201,61 @@ func (p timeSlice) Less(i, j int) bool {
 
 func (p timeSlice) Swap(i, j int) {
 	p[i], p[j] = p[j], p[i]
+}
+
+const (
+	// astrals default time format
+	TimeFormatAstral = "Jan _2 15:04"
+	// TimeFormatGo handles Go's default time.Now() format
+	// (e.g. 2019-01-26 09:43:57.377055 +0100 CET m=+0.644739467)
+	TimeFormatGo = "2006-01-02 15:04:05.999999999 -0700 MST"
+	// TimeFormatSimple handles "2019-01-25 21:51:38"
+	TimeFormatSimple = "2006-01-02 15:04:05.999999999"
+	// TimeFormatHTTP instead of importing main with http.TimeFormat
+	// which would increase the binary size significantly.
+	TimeFormatHTTP = "Mon, 02 Jan 2006 15:04:05 GMT"
+)
+
+func FormatName(format string) (string, error) {
+
+	if format == TimeFormatAstral {
+		return TimeFormatAstral, nil
+	}
+
+	switch strings.ToLower(format) {
+	case "":
+		return TimeFormatGo, nil
+	case "unix":
+		return time.UnixDate, nil
+	case "ruby":
+		return time.RubyDate, nil
+	case "ansic":
+		return time.ANSIC, nil
+	case "rfc822":
+		return time.RFC822, nil
+	case "rfc822z":
+		return time.RFC822Z, nil
+	case "rfc850":
+		return time.RFC850, nil
+	case "rfc1123":
+		return time.RFC1123, nil
+	case "rfc1123z":
+		return time.RFC1123Z, nil
+	case "rfc3339":
+		return time.RFC3339, nil
+	case "rfc3339nano":
+		return time.RFC3339Nano, nil
+	case "stamp":
+		return time.Stamp, nil
+	case "stampmilli":
+		return time.StampMilli, nil
+	case "stampmicro":
+		return time.StampMicro, nil
+	case "stampnano":
+		return time.StampNano, nil
+	case "http":
+		return TimeFormatHTTP, nil
+	default:
+		return TimeFormatGo, fmt.Errorf("failed to parse format %q", format)
+	}
 }
