@@ -315,9 +315,10 @@ func time_of_transit(observer Observer, date time.Time, zenith float64, directio
 
 	adjustment_for_refraction := refraction_at_zenith(zenith + adjustment_for_elevation)
 
-	jd := julianday(date)
-	t := jday_to_jcentury(jd)
-	solarDec := sun_declination(t)
+	midday := time.Date(date.Year(), date.Month(), date.Day(), 12, 0, 0, 0, date.Location())
+	jd := julianday(midday)
+	jc := jday_to_jcentury(jd)
+	solarDec := sun_declination(jc)
 
 	hourangle, err := hour_angle(latitude, solarDec, zenith+adjustment_for_elevation-adjustment_for_refraction, direction)
 	if err != nil {
@@ -326,10 +327,10 @@ func time_of_transit(observer Observer, date time.Time, zenith float64, directio
 
 	delta := -observer.Longitude - degrees(hourangle)
 	timeDiff := 4.0 * delta
-	timeUTC := 720.0 + timeDiff - eq_of_time(t)
+	timeUTC := 720.0 + timeDiff - eq_of_time(jc)
 
-	t = jday_to_jcentury(jcentury_to_jday(t) + timeUTC/1440.0)
-	solarDec = sun_declination(t)
+	jc = jday_to_jcentury(jcentury_to_jday(jc) + timeUTC/1440.0)
+	solarDec = sun_declination(jc)
 	hourangle, err = hour_angle(latitude, solarDec, zenith+adjustment_for_elevation+adjustment_for_refraction, direction)
 	if err != nil {
 		return time.Time{}, err
@@ -337,7 +338,7 @@ func time_of_transit(observer Observer, date time.Time, zenith float64, directio
 
 	delta = -observer.Longitude - degrees(hourangle)
 	timeDiff = 4.0 * delta
-	timeUTC = 720 + timeDiff - eq_of_time(t)
+	timeUTC = 720 + timeDiff - eq_of_time(jc)
 
 	td := minutes_to_timedelta(timeUTC)
 	dt := time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, time.UTC).Add(td).In(date.Location())
