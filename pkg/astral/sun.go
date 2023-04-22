@@ -192,14 +192,15 @@ func eq_of_time(juliancentury float64) float64 {
 //
 // See https://en.wikipedia.org/wiki/Hour_angle#Solar_hour_angle
 // Args:
-//     latitude: The latitude of the obersver
-//     declination: The declination of the sun
-//     zenith: The zenith angle of the sun
-//     direction: The direction of traversal of the sun
+//
+//	latitude: The latitude of the obersver
+//	declination: The declination of the sun
+//	zenith: The zenith angle of the sun
+//	direction: The direction of traversal of the sun
 //
 // Raises:
-//     ValueError
 //
+//	ValueError
 func hour_angle(latitude float64, declination float64, zenith float64, direction SunDirection) (float64, error) {
 	latitude_rad := radians(latitude)
 	declination_rad := radians(declination)
@@ -212,23 +213,25 @@ func hour_angle(latitude float64, declination float64, zenith float64, direction
 
 	h := (math.Cos(zenith_rad) - math.Sin(latitude_rad)*math.Sin(declination_rad)) / (math.Cos(latitude_rad) * math.Cos(declination_rad))
 
-	HA := math.Acos(h)
-	if math.IsNaN(HA) {
+	hourAngle := math.Acos(h)
+	if math.IsNaN(hourAngle) {
 		return 0, errors.New("not able to determine hour angle")
 	}
 	if direction == SunDirectionSetting {
-		HA = -HA
+		hourAngle = -hourAngle
 	}
-	return HA, nil
+	return hourAngle, nil
 }
 
 // Calculate the extra degrees of depression that you can see round the earth
 // due to the increase in elevation.
 // Args:
-//     elevation: Elevation above the earth in metres
-// Returns:
-//     A number of degrees to add to adjust for the elevation of the observer
 //
+//	elevation: Elevation above the earth in metres
+//
+// Returns:
+//
+//	A number of degrees to add to adjust for the elevation of the observer
 func adjust_to_horizon(elevation float64) float64 {
 
 	if elevation <= 0 {
@@ -283,14 +286,19 @@ func refraction_at_zenith(zenith float64) float64 {
 
 // Calculate the time in the UTC timezone when the sun transits the specificed zenith
 // Args:
-//     observer: An observer viewing the sun at a specific, latitude, longitude and elevation
-//     date: The date to calculate for
-//     zenith: The zenith angle for which to calculate the transit time
-//     direction: The direction that the sun is traversing
+//
+//	observer: An observer viewing the sun at a specific, latitude, longitude and elevation
+//	date: The date to calculate for
+//	zenith: The zenith angle for which to calculate the transit time
+//	direction: The direction that the sun is traversing
+//
 // Raises:
-//     ValueError if the zenith is not transitted by the sun
+//
+//	ValueError if the zenith is not transitted by the sun
+//
 // Returns:
-//     the time when the sun transits the specificed zenith
+//
+//	the time when the sun transits the specificed zenith
 func time_of_transit(observer Observer, date time.Time, zenith float64, direction SunDirection) (time.Time, error) {
 	latitude := observer.Latitude
 	if observer.Latitude > 89.8 {
@@ -343,18 +351,22 @@ func time_of_transit(observer Observer, date time.Time, zenith float64, directio
 
 // Calculates the time when the sun is at the specified elevation on the specified date.
 // Note:
-//     This method uses positive elevations for those above the horizon.
-//     Elevations greater than 90 degrees are converted to a setting sun
-//     i.e. an elevation of 110 will calculate a setting sun at 70 degrees.
-// Args:
-//     elevation: Elevation of the sun in degrees above the horizon to calculate for.
-//     observer:  Observer to calculate for
-//     date:      Date to calculate for.
-//     direction: Determines whether the calculated time is for the sun rising or setting.
-//                Use ``SunDirectionRising`` or ``SunDirectionSetting``. Default is rising.
-// Returns:
-//     Date and time at which the sun is at the specified elevation.
 //
+//	This method uses positive elevations for those above the horizon.
+//	Elevations greater than 90 degrees are converted to a setting sun
+//	i.e. an elevation of 110 will calculate a setting sun at 70 degrees.
+//
+// Args:
+//
+//	elevation: Elevation of the sun in degrees above the horizon to calculate for.
+//	observer:  Observer to calculate for
+//	date:      Date to calculate for.
+//	direction: Determines whether the calculated time is for the sun rising or setting.
+//	           Use ``SunDirectionRising`` or ``SunDirectionSetting``. Default is rising.
+//
+// Returns:
+//
+//	Date and time at which the sun is at the specified elevation.
 func TimeAtElevation(observer Observer, elevation float64, date time.Time, direction SunDirection) (time.Time, error) {
 	if elevation > 90.0 {
 		elevation = 180.0 - elevation
@@ -371,10 +383,13 @@ func TimeAtElevation(observer Observer, elevation float64, date time.Time, direc
 
 // Calculate solar noon time when the sun is at its highest point.
 // Args:
-//     observer: An observer viewing the sun at a specific, latitude, longitude and elevation
-//     date:     Date to calculate for. Default is today for the specified tzinfo.
+//
+//	observer: An observer viewing the sun at a specific, latitude, longitude and elevation
+//	date:     Date to calculate for. Default is today for the specified tzinfo.
+//
 // Returns:
-//     Date and time at which noon occurs.
+//
+//	Date and time at which noon occurs.
 func Noon(observer Observer, date time.Time) time.Time {
 	jc := jday_to_jcentury(julianday(date))
 	eqtime := eq_of_time(jc)
@@ -411,14 +426,19 @@ func Noon(observer Observer, date time.Time) time.Time {
 
 // Calculate solar midnight time.
 // Note:
-//     This calculates the solar midnight that is closest
-//     to 00:00:00 of the specified date i.e. it may return a time that is on
-//     the previous day.
+//
+//	This calculates the solar midnight that is closest
+//	to 00:00:00 of the specified date i.e. it may return a time that is on
+//	the previous day.
+//
 // Args:
-//     observer: An observer viewing the sun at a specific, latitude, longitude and elevation
-//     date:     Date to calculate for. Default is today for the specified tzinfo.
+//
+//	observer: An observer viewing the sun at a specific, latitude, longitude and elevation
+//	date:     Date to calculate for. Default is today for the specified tzinfo.
+//
 // Returns:
-//     Date and time at which midnight occurs.
+//
+//	Date and time at which midnight occurs.
 func Midnight(observer Observer, date time.Time) time.Time {
 	jd := julianday(date)
 	newt := jday_to_jcentury(jd + 0.5 + -observer.Longitude/360.0)
@@ -541,8 +561,8 @@ func ZenithAndAzimuth(observer Observer, dateandtime time.Time, with_refraction 
 //     with_refraction: If True adjust zenith to take refraction into account
 
 // Returns:
-//     The zenith angle in degrees.
 //
+//	The zenith angle in degrees.
 func Zenith(observer Observer, dateandtime time.Time, with_refraction bool) float64 {
 	zenith, _ := ZenithAndAzimuth(observer, dateandtime, with_refraction)
 	return zenith
@@ -550,10 +570,13 @@ func Zenith(observer Observer, dateandtime time.Time, with_refraction bool) floa
 
 // Calculate the azimuth angle of the sun.
 // Args:
-//     observer:    Observer to calculate the solar azimuth for
-//     dateandtime: The date and time for which to calculate the angle.
+//
+//	observer:    Observer to calculate the solar azimuth for
+//	dateandtime: The date and time for which to calculate the angle.
+//
 // Returns:
-//     The azimuth angle in degrees clockwise from North.
+//
+//	The azimuth angle in degrees clockwise from North.
 func Azimuth(observer Observer, dateandtime time.Time) float64 {
 	_, azimuth := ZenithAndAzimuth(observer, dateandtime, true)
 	return azimuth
@@ -561,25 +584,30 @@ func Azimuth(observer Observer, dateandtime time.Time) float64 {
 
 // Calculate the sun's angle of elevation.
 // Args:
-//     observer:    Observer to calculate the solar elevation for
-//     dateandtime: The date and time for which to calculate the angle.
-//     with_refraction: If True adjust elevation to take refraction into account
-// Returns:
-//     The elevation angle in degrees above the horizon.
 //
+//	observer:    Observer to calculate the solar elevation for
+//	dateandtime: The date and time for which to calculate the angle.
+//	with_refraction: If True adjust elevation to take refraction into account
+//
+// Returns:
+//
+//	The elevation angle in degrees above the horizon.
 func Elevation(observer Observer, dateandtime time.Time, with_refraction bool) float64 {
 	return 90.0 - Zenith(observer, dateandtime, with_refraction)
 }
 
 // Calculate dawn time.
 // Args:
-//     observer:   Observer to calculate dawn for
-//     date:       Date to calculate for.
-//     depression: Number of degrees below the horizon to use to calculate dawn.
-//                 Default is for Civil dawn i.e. 6.0
-//     tzinfo:     Timezone to return times in. Default is UTC.
+//
+//	observer:   Observer to calculate dawn for
+//	date:       Date to calculate for.
+//	depression: Number of degrees below the horizon to use to calculate dawn.
+//	            Default is for Civil dawn i.e. 6.0
+//	tzinfo:     Timezone to return times in. Default is UTC.
+//
 // Returns:
-//     Date and time at which dawn occurs.
+//
+//	Date and time at which dawn occurs.
 func Dawn(observer Observer, date time.Time, depression float64) (time.Time, error) {
 	t, err := time_of_transit(observer, date, 90.0+depression, SunDirectionRising)
 	if err != nil {
@@ -595,11 +623,14 @@ var (
 
 // Calculate sunrise time.
 // Args:
-//     observer Observer to calculate sunrise for
-//     date:     Date to calculate for.
-//     tzinfo:   Timezone to return times in. Default is UTC.
+//
+//	observer Observer to calculate sunrise for
+//	date:     Date to calculate for.
+//	tzinfo:   Timezone to return times in. Default is UTC.
+//
 // Returns:
-//     Date and time at which sunrise occurs.
+//
+//	Date and time at which sunrise occurs.
 func Sunrise(observer Observer, date time.Time) (time.Time, error) {
 	t, err := time_of_transit(observer, date, 90.0+sunApperentRadius, SunDirectionRising)
 
@@ -616,20 +647,25 @@ func Sunrise(observer Observer, date time.Time) (time.Time, error) {
 
 // Calculate sunset time.
 // Args:
-//     observer Observer to calculate sunset for
-//     date:     Date to calculate for.
-//     tzinfo:   Timezone to return times in. Default is UTC.
-// Returns:
-//     Date and time at which sunset occurs.
-// Raises:
-//     ValueError: if the sun does not reach the horizon
 //
-//	if isinstance(tzinfo, str) {
-//		tzinfo = pytz.timezone(tzinfo)
-//	}
-//	if date.IsZero() {
-//		date := today(tzinfo)
-//	}
+//	observer Observer to calculate sunset for
+//	date:     Date to calculate for.
+//	tzinfo:   Timezone to return times in. Default is UTC.
+//
+// Returns:
+//
+//	Date and time at which sunset occurs.
+//
+// Raises:
+//
+//	    ValueError: if the sun does not reach the horizon
+//
+//		if isinstance(tzinfo, str) {
+//			tzinfo = pytz.timezone(tzinfo)
+//		}
+//		if date.IsZero() {
+//			date := today(tzinfo)
+//		}
 func Sunset(observer Observer, date time.Time) (time.Time, error) {
 	t, err := time_of_transit(observer, date, 90.0+sunApperentRadius, SunDirectionSetting)
 	if err != nil {
@@ -662,6 +698,7 @@ func Sunset(observer Observer, date time.Time) (time.Time, error) {
 //	if isinstance(tzinfo, str) {
 //		tzinfo = pytz.timezone(tzinfo)
 //	}
+//
 //	if date.IsZero() {
 //		date := today(tzinfo)
 //	}
@@ -675,13 +712,18 @@ func Dusk(observer Observer, date time.Time, depression float64) (time.Time, err
 
 // Calculate daylight start and end times.
 // Args:
-//     observer Observer to calculate daylight for
-//     date:     Date to calculate for.
-//     tzinfo:   Timezone to return times in. Default is UTC.
+//
+//	observer Observer to calculate daylight for
+//	date:     Date to calculate for.
+//	tzinfo:   Timezone to return times in. Default is UTC.
+//
 // Returns:
-//     A tuple of the date and time at which daylight starts and ends.
+//
+//	A tuple of the date and time at which daylight starts and ends.
+//
 // Raises:
-//     ValueError: if the sun does not rise or does not set
+//
+//	ValueError: if the sun does not rise or does not set
 func Daylight(observer Observer, date time.Time) (time.Time, time.Time, error) {
 	start, err := Sunrise(observer, date)
 	if err != nil {
@@ -698,15 +740,20 @@ func Daylight(observer Observer, date time.Time) (time.Time, time.Time, error) {
 // Night is calculated to be between astronomical dusk on the
 // date specified and astronomical dawn of the next day.
 // Args:
-//     observer Observer to calculate night for
-//     date:     Date to calculate for. Default is today's date for the
-//               specified tzinfo.
-//     tzinfo:   Timezone to return times in. Default is UTC.
+//
+//	observer Observer to calculate night for
+//	date:     Date to calculate for. Default is today's date for the
+//	          specified tzinfo.
+//	tzinfo:   Timezone to return times in. Default is UTC.
+//
 // Returns:
-//     A tuple of the date and time at which night starts and ends.
+//
+//	A tuple of the date and time at which night starts and ends.
+//
 // Raises:
-//     ValueError: if dawn does not occur on the specified date or
-//                 dusk on the following day
+//
+//	ValueError: if dawn does not occur on the specified date or
+//	            dusk on the following day
 func Night(observer Observer, date time.Time) (time.Time, time.Time, error) {
 	start, err := Dusk(observer, date, 6)
 	if err != nil {
@@ -725,17 +772,21 @@ func Night(observer Observer, date time.Time) (time.Time, time.Time, error) {
 // This method defines twilight as being between the time
 // when the sun is at -6 degrees and sunrise/sunset.
 // Args:
-//     observer:  Observer to calculate twilight for
-//     date:      Date for which to calculate the times.
 //
-//     direction: Determines whether the time is for the sun rising or setting.
-//                   Use ``astral.SunDirectionRising`` or ``astral.SunDirectionSetting``.
-//     tzinfo:    Timezone to return times in. Default is UTC.
+//	observer:  Observer to calculate twilight for
+//	date:      Date for which to calculate the times.
+//
+//	direction: Determines whether the time is for the sun rising or setting.
+//	              Use ``astral.SunDirectionRising`` or ``astral.SunDirectionSetting``.
+//	tzinfo:    Timezone to return times in. Default is UTC.
+//
 // Returns:
-//     A tuple of the date and time at which twilight starts and ends.
-// Raises:
-//     ValueError: if the sun does not rise or does not set
 //
+//	A tuple of the date and time at which twilight starts and ends.
+//
+// Raises:
+//
+//	ValueError: if the sun does not rise or does not set
 func Twilight(observer Observer, date time.Time, direction SunDirection) (time.Time, time.Time, error) {
 	start, err := time_of_transit(observer, date, 90+6, direction)
 	if err != nil {
@@ -762,17 +813,21 @@ func Twilight(observer Observer, date time.Time, direction SunDirection) (time.T
 // golden hour is when the sun is between 4 degrees below the horizon
 // and 6 degrees above.
 // Args:
-//     observer:  Observer to calculate the golden hour for
-//     date:      Date for which to calculate the times.
 //
-//     direction: Determines whether the time is for the sun rising or setting.
-//                   Use ``SunDirectionRising`` or ``SunDirectionSetting``.
-//     tzinfo:    Timezone to return times in. Default is UTC.
+//	observer:  Observer to calculate the golden hour for
+//	date:      Date for which to calculate the times.
+//
+//	direction: Determines whether the time is for the sun rising or setting.
+//	              Use ``SunDirectionRising`` or ``SunDirectionSetting``.
+//	tzinfo:    Timezone to return times in. Default is UTC.
+//
 // Returns:
-//     A tuple of the date and time at which the Golden Hour starts and ends.
-// Raises:
-//     ValueError: if the sun does not transit the elevations -4 & +6 degrees
 //
+//	A tuple of the date and time at which the Golden Hour starts and ends.
+//
+// Raises:
+//
+//	ValueError: if the sun does not transit the elevations -4 & +6 degrees
 func GoldenHour(observer Observer, date time.Time, direction SunDirection) (time.Time, time.Time, error) {
 	start, err := time_of_transit(observer, date, 90+4, direction)
 	if err != nil {
@@ -807,8 +862,8 @@ func GoldenHour(observer Observer, date time.Time, direction SunDirection) (time
 //     A tuple of the date and time at which the Blue Hour starts and ends.
 
 // Raises:
-//     ValueError: if the sun does not transit the elevations -4 & -6 degrees
 //
+//	ValueError: if the sun does not transit the elevations -4 & -6 degrees
 func BlueHour(observer Observer, date time.Time, direction SunDirection) (time.Time, time.Time, error) {
 	start, err := time_of_transit(observer, date, 90+6, direction)
 	if err != nil {
