@@ -238,7 +238,7 @@ func TestMidnight(t *testing.T) {
 		want time.Time
 	}{
 		{args: args{observer: london, date: time.Date(2016, 2, 18, 0, 0, 0, 0, time.UTC)}, want: time.Date(2016, 2, 18, 0, 14, 0, 0, time.UTC)},
-		// {args: args{observer: london, date: time.Date(2016, 10, 26, 0, 0, 0, 0, time.UTC)}, want: time.Date(2016, 10, 25, 23, 44, 0, 0, time.UTC)}, // TODO
+		{args: args{observer: london, date: time.Date(2016, 10, 26, 0, 0, 0, 0, time.UTC)}, want: time.Date(2016, 10, 25, 23, 44, 0, 0, time.UTC)}, // TODO
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

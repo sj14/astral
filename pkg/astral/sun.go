@@ -411,10 +411,10 @@ func Noon(observer Observer, date time.Time) time.Time {
 	}
 	if hour > 23 {
 		hour -= 24
-		date.Add(24 * time.Hour)
+		date = date.Add(24 * time.Hour)
 	} else if hour < 0 {
 		hour += 24
-		date.Add(-24 * time.Hour)
+		date = date.Add(-24 * time.Hour)
 	}
 	noon := time.Date(date.Year(), date.Month(), date.Day(), hour, minute, second, 0, time.UTC).In(date.Location())
 	return noon
@@ -465,7 +465,7 @@ func Midnight(observer Observer, date time.Time) time.Time {
 
 	if hour < 0 {
 		hour += 24
-		date.Add(-24 * time.Hour)
+		date = date.Add(-24 * time.Hour)
 	}
 	return time.Date(date.Year(), date.Month(), date.Day(), hour, minute, second, 0, time.UTC).In(date.Location())
 }
