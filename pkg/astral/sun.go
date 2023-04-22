@@ -436,6 +436,7 @@ func Noon(observer Observer, date time.Time) time.Time {
 //
 //	Date and time at which midnight occurs.
 func Midnight(observer Observer, date time.Time) time.Time {
+	date = time.Date(date.Year(), date.Month(), date.Day(), 12, 0, 0, 0, date.Location())
 	jd := julianday(date)
 	newt := jday_to_jcentury(jd + 0.5 + -observer.Longitude/360.0)
 
