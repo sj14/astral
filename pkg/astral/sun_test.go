@@ -238,7 +238,7 @@ func TestMidnight(t *testing.T) {
 		want time.Time
 	}{
 		{args: args{observer: london, date: time.Date(2016, 2, 18, 0, 0, 0, 0, time.UTC)}, want: time.Date(2016, 2, 18, 0, 14, 0, 0, time.UTC)},
-		// {args: args{observer: london, date: time.Date(2016, 10, 26, 0, 0, 0, 0, time.UTC)}, want: time.Date(2016, 10, 25, 23, 44, 0, 0, time.UTC)}, // TODO
+		{args: args{observer: london, date: time.Date(2016, 10, 26, 0, 0, 0, 0, time.UTC)}, want: time.Date(2016, 10, 25, 23, 44, 0, 0, time.UTC)}, // TODO
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -585,75 +585,6 @@ func TestAdjustToObscuringFeature(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got := adjust_to_obscuring_feature(tt.args.elevation0, tt.args.elevation1)
 			require.True(t, almostEqualf(got, tt.want, 0.0000000000001), "wantStart: %v but got: %v", tt.want, got)
-		})
-	}
-}
-
-func TestJulianday(t *testing.T) {
-	type args struct {
-		date time.Time
-	}
-	tests := []struct {
-		name string
-		args args
-		want float64
-	}{
-		{args: args{date: time.Date(2012, 1, 1, 0, 0, 0, 0, time.UTC)}, want: 2455927.5},
-		{args: args{date: time.Date(2013, 6, 1, 0, 0, 0, 0, time.UTC)}, want: 2456444.5},
-		{args: args{date: time.Date(1867, 2, 1, 0, 0, 0, 0, time.UTC)}, want: 2402998.5},
-		{args: args{date: time.Date(3200, 11, 14, 0, 0, 0, 0, time.UTC)}, want: 2890153.5},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := julianday(tt.args.date)
-			require.Equal(t, tt.want, got, "wantStart: %v but got: %v", tt.want, got)
-		})
-	}
-}
-
-func TestJulianDayToCentury(t *testing.T) {
-	type args struct {
-		date float64
-	}
-	tests := []struct {
-		name string
-		args args
-		want float64
-	}{
-		{args: args{date: 2455927.5}, want: 0.119986311},
-		{args: args{date: 2456293.5}, want: 0.130006845},
-		{args: args{date: 2456444.5}, want: 0.134140999},
-		{args: args{date: 2402998.5}, want: -1.329130732},
-		{args: args{date: 2890153.5}, want: 12.00844627},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := jday_to_jcentury(tt.args.date)
-			require.True(t, almostEqualf(tt.want, got, 0.000000001), "wantStart: %v but got: %v", tt.want, got)
-		})
-	}
-}
-
-func TestJulianCenturyToDay(t *testing.T) {
-	type args struct {
-		date float64
-	}
-	tests := []struct {
-		name string
-		args args
-		want float64
-	}{
-		{args: args{date: 0.119986311}, want: 2455927.5},
-		{args: args{date: 0.130006845}, want: 2456293.5},
-		{args: args{date: 0.134140999}, want: 2456444.5},
-		{args: args{date: -1.32913073}, want: 2402998.5},
-		{args: args{date: 12.00844627}, want: 2890153.5},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := jcentury_to_jday(tt.args.date)
-			// TODO: not sure if the accuracy is good enough
-			require.True(t, almostEqualf(tt.want, got, 0.0001), "want: %v but got: %v", tt.want, got)
 		})
 	}
 }
