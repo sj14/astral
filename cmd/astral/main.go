@@ -119,29 +119,24 @@ func main() {
 		log.Fatalf("failed parsing moon phase: %v", err)
 	}
 
-	dates := make(map[time.Time]*colorDesc)
-	dates[t] = &colorDesc{special: true}
-	dates[dawnAstronomical] = &colorDesc{color: aurora.BgGray(8, " "), desc: "Dawn (Astronomical)"}
-	dates[dawnNautical] = &colorDesc{color: aurora.BgGray(15, " "), desc: "Dawn (Nautical)"}
-	dates[dawnCivil] = &colorDesc{color: aurora.BgIndex(111, " "), desc: "Dawn (Civil)         Twilight Start    Blue Hour Start"}
-	dates[goldenRisingStart] = &colorDesc{color: aurora.BgIndex(208, " "), desc: "Golden Hour Start                      Blue Hour End"}
-	dates[sunrise] = &colorDesc{color: aurora.BgIndex(214, " "), desc: "Sunrise              Twilight End"}
-	dates[goldenRisingEnd] = &colorDesc{color: aurora.BgIndex(226, " "), desc: "Golden Hour End"}
-	dates[noon] = &colorDesc{color: aurora.BgIndex(226, " "), desc: "Noon"}
-	dates[goldenSettingStart] = &colorDesc{color: aurora.BgIndex(214, " "), desc: "Golden Hour Start"}
-	dates[sunset] = &colorDesc{color: aurora.BgIndex(208, " "), desc: "Sunset               Twilight Start"}
-	dates[goldenSettingEnd] = &colorDesc{color: aurora.BgIndex(111, " "), desc: "Golden Hour End                        Blue Hour Start"}
-	dates[duskCivil] = &colorDesc{color: aurora.BgGray(18, " "), desc: "Dusk (Civil)         Twilight End      Blue Hour End "}
-	dates[duskNautical] = &colorDesc{color: aurora.BgGray(15, " "), desc: "Dusk (Nautical)"}
-	dates[duskAstronomical] = &colorDesc{color: aurora.BgGray(8, " "), desc: "Dusk (Astronomical)"}
-	dates[midnight] = &colorDesc{color: aurora.BgBlack(" "), desc: "Midnight"}
-
-	var sortedTimes timeSlice
-
-	for key := range dates {
-		sortedTimes = append(sortedTimes, key)
+	dates := eventTable{
+		&eventEntry{t, colorDesc{special: true}},
+		&eventEntry{dawnAstronomical, colorDesc{color: aurora.BgGray(8, " "), desc: "Dawn (Astronomical)"}},
+		&eventEntry{dawnNautical, colorDesc{color: aurora.BgGray(15, " "), desc: "Dawn (Nautical)"}},
+		&eventEntry{dawnCivil, colorDesc{color: aurora.BgIndex(111, " "), desc: "Dawn (Civil)         Twilight Start    Blue Hour Start"}},
+		&eventEntry{goldenRisingStart, colorDesc{color: aurora.BgIndex(208, " "), desc: "Golden Hour Start                      Blue Hour End"}},
+		&eventEntry{sunrise, colorDesc{color: aurora.BgIndex(214, " "), desc: "Sunrise              Twilight End"}},
+		&eventEntry{goldenRisingEnd, colorDesc{color: aurora.BgIndex(226, " "), desc: "Golden Hour End"}},
+		&eventEntry{noon, colorDesc{color: aurora.BgIndex(226, " "), desc: "Noon"}},
+		&eventEntry{goldenSettingStart, colorDesc{color: aurora.BgIndex(214, " "), desc: "Golden Hour Start"}},
+		&eventEntry{sunset, colorDesc{color: aurora.BgIndex(208, " "), desc: "Sunset               Twilight Start"}},
+		&eventEntry{goldenSettingEnd, colorDesc{color: aurora.BgIndex(111, " "), desc: "Golden Hour End                        Blue Hour Start"}},
+		&eventEntry{duskCivil, colorDesc{color: aurora.BgGray(18, " "), desc: "Dusk (Civil)         Twilight End      Blue Hour End "}},
+		&eventEntry{duskNautical, colorDesc{color: aurora.BgGray(15, " "), desc: "Dusk (Nautical)"}},
+		&eventEntry{duskAstronomical, colorDesc{color: aurora.BgGray(8, " "), desc: "Dusk (Astronomical)"}},
+		&eventEntry{midnight, colorDesc{color: aurora.BgBlack(" "), desc: "Midnight"}},
 	}
-	sort.Sort(sortedTimes)
+	sort.Sort(dates)
 
 	fmt.Printf("Date/Time\t%v\n", t.Format(dateTimeFormat))
 	fmt.Printf("Latitude\t%v\nLongitude\t%v\nElevation\t%v\n", *latFlag, *longFlag, *elevationFlag)
@@ -152,45 +147,44 @@ func main() {
 	fmt.Println()
 
 	longestDesc := 0
-	for _, key := range sortedTimes {
-		ld := len(dates[key].desc)
-		if ld > longestDesc {
+	for _, de := range dates {
+		if ld := utf8.RuneCountInString(de.desc); ld > longestDesc {
 			longestDesc = ld
 		}
 	}
 
 	lastColor := aurora.BgBlack(" ")
-	for _, key := range sortedTimes {
+	for _, de := range dates {
 
 		// calculate when the particular phase happend or will happen
-		inHours := math.Abs(key.Sub(t).Truncate(1 * time.Hour).Hours())
-		inMinutes := int(math.Abs((key.Sub(t).Truncate(1 * time.Minute).Minutes()))) % 60
+		inHours := math.Abs(de.time.Sub(t).Truncate(1 * time.Hour).Hours())
+		inMinutes := int(math.Abs((de.time.Sub(t).Truncate(1 * time.Minute).Minutes()))) % 60
 
 		sign := "+"
-		if key.Before(t) {
+		if de.time.Before(t) {
 			sign = "-"
 		}
 		agoOrUntil := fmt.Sprintf("%s%02.0f:%02d", sign, inHours, inMinutes)
 
-		prefix := fmt.Sprintf("%v (%v)", key.Format(dateTimeFormat), agoOrUntil)
+		prefix := fmt.Sprintf("%v (%v)", de.time.Format(dateTimeFormat), agoOrUntil)
 
 		// edge case for the given time
-		if dates[key].special {
+		if de.special {
 
-			t := fmt.Sprintf(" %v ", key.Truncate(1*time.Minute).Format(timeFormat))
+			t := fmt.Sprintf(" %v ", de.time.Truncate(1*time.Minute).Format(timeFormat))
 			l := utf8.RuneCountInString(prefix) - utf8.RuneCountInString(t)
 
 			preDashes := strings.Repeat(dashes, l/2)
 			postDashes := strings.Repeat(dashes, l-(l/2))
 
 			prefix = fmt.Sprintf("%v%v%v", preDashes, t, postDashes)
-			dates[key].color = lastColor
-			dates[key].desc = strings.Repeat(dashes, longestDesc)
+			de.color = lastColor
+			de.desc = strings.Repeat(dashes, longestDesc)
 		}
 
-		lastColor = dates[key].color
+		lastColor = de.color
 
-		fmt.Printf("%v %v %v\n", prefix, dates[key].color, dates[key].desc)
+		fmt.Printf("%v %v %v\n", prefix, de.color, de.desc)
 	}
 }
 
@@ -200,17 +194,22 @@ type colorDesc struct {
 	special bool
 }
 
-type timeSlice []time.Time
+type eventEntry struct {
+	time time.Time
+	colorDesc
+}
 
-func (p timeSlice) Len() int {
+type eventTable []*eventEntry
+
+func (p eventTable) Len() int {
 	return len(p)
 }
 
-func (p timeSlice) Less(i, j int) bool {
-	return p[i].Before(p[j])
+func (p eventTable) Less(i, j int) bool {
+	return p[i].time.Before(p[j].time)
 }
 
-func (p timeSlice) Swap(i, j int) {
+func (p eventTable) Swap(i, j int) {
 	p[i], p[j] = p[j], p[i]
 }
 
