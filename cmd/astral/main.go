@@ -21,6 +21,8 @@ var (
 	date    = "undefined"
 )
 
+const dashes = "┈"
+
 func main() {
 	var (
 		dateTimeFormat = TimeFormatAstral
@@ -116,10 +118,8 @@ func main() {
 		log.Fatalf("failed parsing moon phase: %v", err)
 	}
 
-	dashes := "┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈"
-
 	dates := make(map[time.Time]colorDesc)
-	dates[t] = colorDesc{desc: dashes}
+	dates[t] = colorDesc{special: true}
 	dates[dawnAstronomical] = colorDesc{color: aurora.BgGray(8, " "), desc: "Dawn (Astronomical)"}
 	dates[dawnNautical] = colorDesc{color: aurora.BgGray(15, " "), desc: "Dawn (Nautical)"}
 	dates[dawnCivil] = colorDesc{color: aurora.BgIndex(111, " "), desc: "Dawn (Civil)         Twilight Start    Blue Hour Start"}
@@ -150,6 +150,14 @@ func main() {
 	fmt.Printf("Moon Phase\t%v (%v)\n", moonDesc, moonPhase)
 	fmt.Println()
 
+	longestDesc := 0
+	for _, key := range sortedTimes {
+		ld := len(dates[key].desc)
+		if ld > longestDesc {
+			longestDesc = ld
+		}
+	}
+
 	lastColor := aurora.BgBlack(" ")
 	for _, key := range sortedTimes {
 
@@ -165,17 +173,18 @@ func main() {
 		}
 
 		// edge case for the given time
-		if dates[key].desc == dashes {
+		if dates[key].special {
 			prefixDashesCount := len(dateTimeFormat) - len(timeFormat) - 1
 			if prefixDashesCount < 0 {
 				prefixDashesCount = 0
 			}
 
-			prefixDashes := key.Format(strings.Repeat("┈", prefixDashesCount))
-			midDashes := strings.Repeat("┈", len(agoOrUntil)+2)
+			prefixDashes := key.Format(strings.Repeat(dashes, prefixDashesCount))
+			midDashes := strings.Repeat(dashes, len(agoOrUntil)+2)
+			endDashes := strings.Repeat(dashes, longestDesc)
 			t := key.Truncate(1 * time.Minute).Format(timeFormat)
 
-			fmt.Printf("%v %v %v %v %v\n", prefixDashes, t, midDashes, lastColor, dates[key].desc)
+			fmt.Printf("%v %v %v %v %v\n", prefixDashes, t, midDashes, lastColor, endDashes)
 			continue
 		}
 
@@ -185,8 +194,9 @@ func main() {
 }
 
 type colorDesc struct {
-	color aurora.Value
-	desc  string
+	color   aurora.Value
+	desc    string
+	special bool
 }
 
 type timeSlice []time.Time
