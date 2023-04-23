@@ -142,12 +142,12 @@ func main() {
 	}
 	sort.Sort(sortedTimes)
 
-	fmt.Printf("Date/Time\t%v\n", t.Format(time.UnixDate))
+	fmt.Printf("Date/Time\t%v\n", t.Format(dateTimeFormat))
 	fmt.Printf("Latitude\t%v\nLongitude\t%v\nElevation\t%v\n", *latFlag, *longFlag, *elevationFlag)
 	fmt.Println()
 	fmt.Printf("Daylight\t%v\n", sunset.Sub(sunrise).Truncate(1*time.Second))
 	fmt.Printf("Night-Time\t%v\n", sunriseNextDay.Sub(sunset).Truncate(1*time.Second))
-	fmt.Printf("Moon Phase\t%v (%v)\n", moonDesc, moonPhase)
+	fmt.Printf("Moon Phase\t%v (%.2f)\n", moonDesc, moonPhase)
 	fmt.Println()
 
 	longestDesc := 0
