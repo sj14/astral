@@ -40,16 +40,19 @@ func phaseAsfloat(date time.Time) float64 {
 
 // Calculates the phase of the moon on the specified date.
 // Args:
-//     date: The date to calculate the phase for. Dates are always in the UTC timezone.
-//           If not specified then today's date is used.
+//
+//	date: The date to calculate the phase for. Dates are always in the UTC timezone.
+//	      If not specified then today's date is used.
+//
 // Returns:
-//     A number designating the phase.
-//     ============  ==============
-//     0 .. 6.99     New moon
-//     7 .. 13.99    First quarter
-//     14 .. 20.99   Full moon
-//     21 .. 27.99   Last quarter
-//     ============  ==============
+//
+//	A number designating the phase.
+//	============  ==============
+//	0 .. 6.99     New moon
+//	7 .. 13.99    First quarter
+//	14 .. 20.99   Full moon
+//	21 .. 27.99   Last quarter
+//	============  ==============
 func MoonPhase(date time.Time) float64 {
 	moon := phaseAsfloat(date)
 	if moon >= 28.0 {
