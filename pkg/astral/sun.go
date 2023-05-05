@@ -81,19 +81,17 @@ func sun_true_long(juliancentury float64) float64 {
 }
 
 // Calculate the sun's true anomaly//
-func sun_true_anomoly(juliancentury float64) float64 {
-	m := geom_mean_anomaly_sun(juliancentury)
-	c := sun_eq_of_center(juliancentury)
+// func sun_true_anomoly(juliancentury float64) float64 {
+// 	m := geom_mean_anomaly_sun(juliancentury)
+// 	c := sun_eq_of_center(juliancentury)
+// 	return m + c
+// }
 
-	return m + c
-}
-
-func sun_rad_vector(juliancentury float64) float64 {
-	v := sun_true_anomoly(juliancentury)
-	e := eccentric_location_earth_orbit(juliancentury)
-
-	return (1.000001018 * (1 - e*e)) / (1 + e*math.Cos(radians(v)))
-}
+// func sun_rad_vector(juliancentury float64) float64 {
+// 	v := sun_true_anomoly(juliancentury)
+// 	e := eccentric_location_earth_orbit(juliancentury)
+// 	return (1.000001018 * (1 - e*e)) / (1 + e*math.Cos(radians(v)))
+// }
 
 func sun_apparent_long(juliancentury float64) float64 {
 	true_long := sun_true_long(juliancentury)
@@ -115,14 +113,14 @@ func obliquity_correction(juliancentury float64) float64 {
 }
 
 // Calculate the sun's right ascension
-func sun_rt_ascension(juliancentury float64) float64 {
-	oc := obliquity_correction(juliancentury)
-	al := sun_apparent_long(juliancentury)
+// func sun_rt_ascension(juliancentury float64) float64 {
+// 	oc := obliquity_correction(juliancentury)
+// 	al := sun_apparent_long(juliancentury)
 
-	tananum := math.Cos(radians(oc)) * math.Sin(radians(al))
-	tanadenom := math.Cos(radians(al))
-	return degrees(math.Atan2(tananum, tanadenom))
-}
+// 	tananum := math.Cos(radians(oc)) * math.Sin(radians(al))
+// 	tanadenom := math.Cos(radians(al))
+// 	return degrees(math.Atan2(tananum, tanadenom))
+// }
 
 // Calculate the sun's declination
 func sun_declination(juliancentury float64) float64 {
