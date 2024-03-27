@@ -33,7 +33,7 @@ snapshot:
 brews:
   - name: astral
     skip_upload: auto
-    tap:
+    repository:
       owner: sj14
       name: homebrew-tap
     description: Calculations for the position of the sun and moon.
