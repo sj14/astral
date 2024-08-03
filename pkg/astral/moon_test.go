@@ -3,8 +3,6 @@ package astral
 import (
 	"testing"
 	"time"
-
-	"github.com/stretchr/testify/require"
 )
 
 func TestMoon(t *testing.T) {
@@ -26,7 +24,7 @@ func TestMoon(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := MoonPhase(tt.args.date)
-			require.True(t, almostEqualf(tt.want, got, 0.000001), "want: %v but got: %v", tt.want, got)
+			almostEqualFloat(t, tt.want, got, 0.000001)
 		})
 	}
 }

@@ -4,8 +4,6 @@ import (
 	"math"
 	"testing"
 	"time"
-
-	"github.com/stretchr/testify/require"
 )
 
 func nextEvent(t *testing.T, obs Observer, dt time.Time, event func(observer Observer, date time.Time) (time.Time, error)) time.Time {
@@ -21,11 +19,6 @@ func nextEvent(t *testing.T, obs Observer, dt time.Time, event func(observer Obs
 	return dt
 }
 
-// TODO: this should probably have an own test
-func almostEqual(t1, t2 time.Time, allowedDiff time.Duration) bool {
-	return diff(t1, t2) < allowedDiff
-}
-
 func absDuration(n time.Duration) time.Duration {
 	if n < 0 {
 		return -n
@@ -37,8 +30,19 @@ func diff(t1, t2 time.Time) time.Duration {
 	return absDuration(t1.Sub(t2))
 }
 
-func almostEqualf(f1, f2, allowedDiff float64) bool {
-	return math.Abs(f1-f2) < allowedDiff
+// TODO: this should probably have an own test
+func almostEqualTime(t *testing.T, t1, t2 time.Time, allowedDiff time.Duration) {
+	t.Helper()
+	if d := diff(t1, t2); d > allowedDiff {
+		t.Fatalf("diff: %q, t1 %q, t2 %q\n", d, t1, t2)
+	}
+}
+
+func almostEqualFloat(t *testing.T, f1, f2, allowedDiff float64) {
+	t.Helper()
+	if abs := math.Abs(f1 - f2); abs > allowedDiff {
+		t.Fatalf("diff: %f, f1 %f, f2 %f\n", abs, f1, f2)
+	}
 }
 
 func TestNorwaySunUp(t *testing.T) {
@@ -47,15 +51,21 @@ func TestNorwaySunUp(t *testing.T) {
 	obs := Observer{Latitude: 69.6, Longitude: 18.8, Elevation: 0.0}
 
 	_, err := Sunrise(obs, june)
-	require.Error(t, err)
+	if err == nil {
+		t.FailNow()
+	}
 	_, err = Sunset(obs, june)
-	require.Error(t, err)
+	if err == nil {
+		t.FailNow()
+	}
 
 	// Find the next sunset and sunrise:
 	nextSunrise := nextEvent(t, obs, june, Sunrise)
 	nextSunset := nextEvent(t, obs, june, Sunset)
 
-	require.True(t, nextSunrise.After(nextSunset))
+	if !nextSunrise.After(nextSunset) {
+		t.FailNow()
+	}
 }
 
 var london = Observer{Latitude: 51.509865, Longitude: -0.118092}
@@ -98,7 +108,7 @@ func TestDawn(t *testing.T) {
 				t.Errorf("Dawn() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			require.True(t, almostEqual(got, tt.want, 60*time.Second), "want: %v but got: %v", tt.want, got)
+			almostEqualTime(t, got, tt.want, 60*time.Second)
 		})
 	}
 }
@@ -138,7 +148,7 @@ func TestDusk(t *testing.T) {
 				t.Errorf("Dawn() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			require.True(t, almostEqual(got, tt.want, 60*time.Second), "want: %v but got: %v", tt.want, got)
+			almostEqualTime(t, got, tt.want, 60*time.Second)
 		})
 	}
 }
@@ -168,7 +178,7 @@ func TestSunrise(t *testing.T) {
 				t.Errorf("Dawn() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			require.True(t, almostEqual(got, tt.want, 60*time.Second), "want: %v but got: %v", tt.want, got)
+			almostEqualTime(t, got, tt.want, 60*time.Second)
 		})
 	}
 }
@@ -198,7 +208,7 @@ func TestSunset(t *testing.T) {
 				t.Errorf("Dawn() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			require.True(t, almostEqual(got, tt.want, 60*time.Second), "want: %v but got: %v", tt.want, got)
+			almostEqualTime(t, got, tt.want, 60*time.Second)
 		})
 	}
 }
@@ -222,7 +232,7 @@ func TestNoon(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := Noon(tt.args.observer, tt.args.date)
-			require.True(t, almostEqual(got, tt.want, 60*time.Second), "want: %v but got: %v", tt.want, got)
+			almostEqualTime(t, got, tt.want, 60*time.Second)
 		})
 	}
 }
@@ -243,7 +253,7 @@ func TestMidnight(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := Midnight(tt.args.observer, tt.args.date)
-			require.True(t, almostEqual(got, tt.want, 60*time.Second), "want: %v but got: %v", tt.want, got)
+			almostEqualTime(t, got, tt.want, 60*time.Second)
 		})
 	}
 }
@@ -273,8 +283,8 @@ func TestTwilight(t *testing.T) {
 				t.Errorf("Dawn() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			require.True(t, almostEqual(start, tt.wantStart, 60*time.Second), "want: %v but got: %v", tt.wantStart, start)
-			require.True(t, almostEqual(end, tt.wantEnd, 60*time.Second), "want: %v but got: %v", tt.wantEnd, end)
+			almostEqualTime(t, start, tt.wantStart, 60*time.Second)
+			almostEqualTime(t, end, tt.wantEnd, 60*time.Second)
 		})
 	}
 }
@@ -348,7 +358,7 @@ func TestElevation(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got := Elevation(tt.args.observer, tt.args.date, tt.args.refraction)
 			// TODO: too far off. Python code uses accuracy of 0.001
-			require.True(t, almostEqualf(got, tt.want, 0.005), "want: %v but got: %v", tt.want, got)
+			almostEqualFloat(t, got, tt.want, 0.005)
 		})
 	}
 }
@@ -371,7 +381,7 @@ func TestAzimuth(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got := Azimuth(tt.args.observer, tt.args.date)
 			// TODO: too far off. Python code uses accuracy of 0.001
-			require.True(t, almostEqualf(got, tt.want, 0.01), "want: %v but got: %v", tt.want, got)
+			almostEqualFloat(t, got, tt.want, 0.01)
 		})
 	}
 }
@@ -394,7 +404,7 @@ func TestZenith(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := Zenith(tt.args.observer, tt.args.date, tt.args.refraction)
-			require.True(t, almostEqualf(got, tt.want, 0.5), "want: %v but got: %v", tt.want, got)
+			almostEqualFloat(t, got, tt.want, 0.5)
 		})
 	}
 }
@@ -429,7 +439,7 @@ func TestTimeAtElevation(t *testing.T) {
 				t.Errorf("Dawn() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			require.True(t, almostEqual(got, tt.want, 180*time.Second), "want: %v but got: %v", tt.want, got)
+			almostEqualTime(t, got, tt.want, 180*time.Second)
 		})
 	}
 }
@@ -455,8 +465,8 @@ func TestDaylight(t *testing.T) {
 				t.Errorf("Dawn() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			require.True(t, almostEqual(gotStart, tt.wantStart, 60*time.Second), "want: %v but got: %v", tt.wantStart, gotStart)
-			require.True(t, almostEqual(gotEnd, tt.wantEnd, 60*time.Second), "want: %v but got: %v", tt.wantEnd, gotEnd)
+			almostEqualTime(t, gotStart, tt.wantStart, 60*time.Second)
+			almostEqualTime(t, gotEnd, tt.wantEnd, 60*time.Second)
 		})
 	}
 }
@@ -482,8 +492,8 @@ func TestNight(t *testing.T) {
 				t.Errorf("Dawn() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			require.True(t, almostEqual(gotStart, tt.wantStart, 90*time.Second), "wantStart: %v but got: %v", tt.wantStart, gotStart)
-			require.True(t, almostEqual(gotEnd, tt.wantEnd, 60*time.Second), "wantEnd: %v but got: %v", tt.wantEnd, gotEnd)
+			almostEqualTime(t, gotStart, tt.wantStart, 90*time.Second)
+			almostEqualTime(t, gotEnd, tt.wantEnd, 60*time.Second)
 		})
 	}
 }
@@ -511,8 +521,8 @@ func TestGoldenHour(t *testing.T) {
 				t.Errorf("Dawn() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			require.True(t, almostEqual(gotStart, tt.wantStart, 90*time.Second), "wantStart: %v but got: %v", tt.wantStart, gotStart)
-			require.True(t, almostEqual(gotEnd, tt.wantEnd, 60*time.Second), "wantEnd: %v but got: %v", tt.wantEnd, gotEnd)
+			almostEqualTime(t, gotStart, tt.wantStart, 90*time.Second)
+			almostEqualTime(t, gotEnd, tt.wantEnd, 60*time.Second)
 		})
 	}
 }
@@ -540,8 +550,8 @@ func TestBlueHour(t *testing.T) {
 				t.Errorf("Dawn() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			require.True(t, almostEqual(gotStart, tt.wantStart, 90*time.Second), "wantStart: %v but got: %v", tt.wantStart, gotStart)
-			require.True(t, almostEqual(gotEnd, tt.wantEnd, 60*time.Second), "wantEnd: %v but got: %v", tt.wantEnd, gotEnd)
+			almostEqualTime(t, gotStart, tt.wantStart, 90*time.Second)
+			almostEqualTime(t, gotEnd, tt.wantEnd, 60*time.Second)
 		})
 	}
 }
@@ -561,7 +571,7 @@ func TestAdjustToHorizon(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := adjust_to_horizon(tt.args.elevation)
-			require.True(t, almostEqualf(got, tt.want, 0.0000000000001), "wantStart: %v but got: %v", tt.want, got)
+			almostEqualFloat(t, got, tt.want, 0.0000000000001)
 		})
 	}
 }
@@ -584,7 +594,7 @@ func TestAdjustToObscuringFeature(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := adjust_to_obscuring_feature(tt.args.elevation0, tt.args.elevation1)
-			require.True(t, almostEqualf(got, tt.want, 0.0000000000001), "wantStart: %v but got: %v", tt.want, got)
+			almostEqualFloat(t, got, tt.want, 0.0000000000001)
 		})
 	}
 }

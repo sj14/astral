@@ -3,8 +3,6 @@ package astral
 import (
 	"testing"
 	"time"
-
-	"github.com/stretchr/testify/require"
 )
 
 func TestJulianday(t *testing.T) {
@@ -39,7 +37,9 @@ func TestJulianday(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := julianday(tt.args.date)
-			require.Equal(t, tt.want, got, "wantStart: %v but got: %v", tt.want, got)
+			if tt.want != got {
+				t.FailNow()
+			}
 		})
 	}
 }
@@ -62,7 +62,7 @@ func TestJulianDayToCentury(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := jday_to_jcentury(tt.args.date)
-			require.True(t, almostEqualf(tt.want, got, 0.000000001), "wantStart: %v but got: %v", tt.want, got)
+			almostEqualFloat(t, tt.want, got, 0.000000001)
 		})
 	}
 }
@@ -86,7 +86,7 @@ func TestJulianCenturyToDay(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got := jcentury_to_jday(tt.args.date)
 			// TODO: not sure if the accuracy is good enough
-			require.True(t, almostEqualf(tt.want, got, 0.0001), "want: %v but got: %v", tt.want, got)
+			almostEqualFloat(t, tt.want, got, 0.0001)
 		})
 	}
 }
