@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/logrusorgru/aurora/v3"
+	"github.com/logrusorgru/aurora/v4"
 	"github.com/sj14/astral/pkg/astral"
 )
 
