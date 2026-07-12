@@ -76,7 +76,7 @@ func MoonPhaseDescription(x float64) (string, error) {
 		return "Full Moon", nil
 	}
 	if x >= 21 && x < 28 {
-		return "Laster Quarter", nil
+		return "Last Quarter", nil
 	}
 
 	return "", fmt.Errorf("failed parsing %v", x)
