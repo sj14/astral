@@ -30,6 +30,7 @@ func main() {
 		latFlag       = flag.Float64("lat", 0, "latitude of the observer")
 		longFlag      = flag.Float64("long", 0, "longitude of the observer")
 		elevationFlag = flag.Float64("elev", 0, "elevation of the observer")
+		cityFlag      = flag.String("city", "", "city to use for lat/long")
 		versionFlag   = flag.Bool("version", false, fmt.Sprintf("print version information of this release (%v)", version))
 	)
 	flag.Parse()
@@ -39,6 +40,25 @@ func main() {
 		fmt.Printf("commit: %v\n", commit)
 		fmt.Printf("date: %v\n", date)
 		os.Exit(0)
+	}
+
+	if *cityFlag == "list" {
+		printCities()
+		os.Exit(0)
+	}
+
+	if *cityFlag != "" {
+
+		lat, long, err := latLongFromCity(*cityFlag)
+		if err != nil {
+			log.Fatalf("failed getting lat/long from city %q: %s", *cityFlag, err)
+		}
+		if *latFlag == 0 {
+			*latFlag = lat
+		}
+		if *longFlag == 0 {
+			*longFlag = long
+		}
 	}
 
 	observer := astral.Observer{Latitude: *latFlag, Longitude: *longFlag, Elevation: *elevationFlag}
