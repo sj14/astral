@@ -29,7 +29,7 @@ func main() {
 		timeFlag      = flag.String("time", time.Now().Format(time.RFC3339), "day/time used for the calculation")
 		latFlag       = flag.Float64("lat", 0, "latitude of the observer")
 		longFlag      = flag.Float64("long", 0, "longitude of the observer")
-		elevationFlag = flag.Float64("elev", 0, "elevation of the observer")
+		elevationFlag = flag.Float64("elev", 0, "elevation of the observer (meters)")
 		versionFlag   = flag.Bool("version", false, fmt.Sprintf("print version information of this release (%v)", version))
 	)
 	flag.Parse()
