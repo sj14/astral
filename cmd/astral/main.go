@@ -26,11 +26,11 @@ func main() {
 		dateTimeFormat = "Jan _2 15:04"
 		timeFormat     = "15:04"
 
-		timeFlag      = flag.String("time", time.Now().Format(time.RFC3339), "day/time used for the calculation")
-		latFlag       = flag.Float64("lat", 0, "latitude of the observer")
-		longFlag      = flag.Float64("long", 0, "longitude of the observer")
-		elevationFlag = flag.Float64("elev", 0, "elevation of the observer (meters)")
-		versionFlag   = flag.Bool("version", false, fmt.Sprintf("print version information of this release (%v)", version))
+		timeFlag      = flag.String("time", time.Now().Format(time.RFC3339), "Day/time used for the calculation.")
+		latFlag       = flag.Float64("lat", 0, "Latitude of the observer. Northern latitudes should be positive.")
+		longFlag      = flag.Float64("long", 0, "Longitude of the observer. Eastern longitudes should be positive.")
+		elevationFlag = flag.Float64("elev", 0, "Elevation and/or distance to nearest obscuring feature in metres above/below the location")
+		versionFlag   = flag.Bool("version", false, fmt.Sprintf("Print version information of this release (%v).", version))
 	)
 	flag.Parse()
 

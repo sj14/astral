@@ -51,13 +51,15 @@ go get -u github.com/sj14/astral/cmd/astral
 ```text
 Usage of astral:
   -elev float
-        elevation of the observer
+        Elevation and/or distance to nearest obscuring feature in metres above/below the location.
   -lat float
-        latitude of the observer
+        Latitude of the observer. Northern latitudes should be positive.
   -long float
-        longitude of the observer
+        Longitude of the observer. Eastern longitudes should be positive.
   -time string
-        day/time used for the calculation (defaults to current time)
+        Day/time used for the calculation (defaults to current time).
+  -version
+        Print version information of this release.
 ```
 
 ### Example
