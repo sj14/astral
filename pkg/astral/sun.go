@@ -177,7 +177,7 @@ func hour_angle(latitude float64, declination float64, zenith float64, direction
 
 	hourAngle := math.Acos(h)
 	if math.IsNaN(hourAngle) {
-		return 0, errors.New("not able to determine hour angle")
+		return 0, errNoHourAngle
 	}
 	if direction == SunDirectionSetting {
 		hourAngle = -hourAngle
@@ -283,28 +283,27 @@ func time_of_transit(observer Observer, date time.Time, zenith float64, directio
 	adjustment_for_refraction := refraction_at_zenith(zenith + adjustment_for_elevation)
 
 	jd := julianday(date)
-	jc := jday_to_jcentury(jd)
-	solarDec := sun_declination(jc)
+	adjustment := 0.0
+	timeUTC := 0.0
 
-	hourangle, err := hour_angle(latitude, solarDec, zenith+adjustment_for_elevation-adjustment_for_refraction, direction)
-	if err != nil {
-		return time.Time{}, err
+	for i := 0; i < 2; i++ {
+		jc := jday_to_jcentury(jd + adjustment)
+		solarDec := sun_declination(jc)
+
+		hourangle, err := hour_angle(latitude, solarDec, zenith+adjustment_for_elevation+adjustment_for_refraction, direction)
+		if err != nil {
+			return time.Time{}, err
+		}
+
+		delta := -observer.Longitude - degrees(hourangle)
+		offset := delta*4.0 - eq_of_time(jc)
+		if offset < -720.0 {
+			offset += 1440
+		}
+
+		timeUTC = 720.0 + offset
+		adjustment = timeUTC / 1440.0
 	}
-
-	delta := -observer.Longitude - degrees(hourangle)
-	timeDiff := 4.0 * delta
-	timeUTC := 720.0 + timeDiff - eq_of_time(jc)
-
-	jc = jday_to_jcentury(jcentury_to_jday(jc) + timeUTC/1440.0)
-	solarDec = sun_declination(jc)
-	hourangle, err = hour_angle(latitude, solarDec, zenith+adjustment_for_elevation+adjustment_for_refraction, direction)
-	if err != nil {
-		return time.Time{}, err
-	}
-
-	delta = -observer.Longitude - degrees(hourangle)
-	timeDiff = 4.0 * delta
-	timeUTC = 720 + timeDiff - eq_of_time(jc)
 
 	td := minutes_to_timedelta(timeUTC)
 	dt := time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, time.UTC).Add(td).In(date.Location())
@@ -403,7 +402,7 @@ func Noon(observer Observer, date time.Time) time.Time {
 //	Date and time at which midnight occurs.
 func Midnight(observer Observer, date time.Time) time.Time {
 	date = time.Date(date.Year(), date.Month(), date.Day(), 12, 0, 0, 0, date.Location())
-	jd := julianday(date)
+	jd := julianday(date) + 0.5 // midday fraction, dropped by the date-only julianday
 	newt := jday_to_jcentury(jd + 0.5 + -observer.Longitude/360.0)
 
 	eqtime := eq_of_time(newt)
@@ -449,15 +448,15 @@ func ZenithAndAzimuth(observer Observer, dateandtime time.Time, with_refraction 
 
 	utc_datetime := dateandtime.UTC()
 
-	timenow := (utc_datetime.Hour() + (utc_datetime.Minute() / 60.0) + (utc_datetime.Second() / 3600.0))
+	timenow := float64(utc_datetime.Hour()) + float64(utc_datetime.Minute())/60.0 + float64(utc_datetime.Second())/3600.0
 
 	JD := julianday(dateandtime)
-	t := jday_to_jcentury(JD + float64(timenow)/24.0)
+	t := jday_to_jcentury(JD + timenow/24.0)
 	solarDec := sun_declination(t)
 	eqtime := eq_of_time(t)
 
 	solarTimeFix := eqtime - (4.0 * -longitude)
-	trueSolarTime := float64(utc_datetime.Hour()*60+utc_datetime.Minute()+utc_datetime.Second()/60) + solarTimeFix
+	trueSolarTime := float64(utc_datetime.Hour())*60.0 + float64(utc_datetime.Minute()) + float64(utc_datetime.Second())/60.0 + solarTimeFix
 	//    in minutes as a float, fractional part is seconds
 
 	for trueSolarTime > 1440 {
@@ -572,17 +571,53 @@ func Elevation(observer Observer, dateandtime time.Time, with_refraction bool) f
 //
 //	Date and time at which dawn occurs.
 func Dawn(observer Observer, date time.Time, depression float64) (time.Time, error) {
-	t, err := time_of_transit(observer, date, 90.0+depression, SunDirectionRising)
-	if err != nil {
+	t, err := time_of_transit_on_date(observer, date, 90.0+depression, SunDirectionRising, "dawn")
+	if errors.Is(err, errNoHourAngle) {
 		return t, fmt.Errorf("sun never reaches %v degrees below the horizon, at this location", depression)
 	}
-	return t, nil
+	return t, err
 }
 
 var (
 	ErrAlwaysBelow = errors.New("sun is always below the horizon on this day, at this location")
 	ErrAlwaysAbove = errors.New("sun is always above the horizon on this day, at this location")
+
+	errNoHourAngle = errors.New("not able to determine hour angle")
 )
+
+// sameCalendarDay reports whether t falls on the same calendar day as date,
+// in date's location.
+func sameCalendarDay(t, date time.Time) bool {
+	ty, tm, td := t.In(date.Location()).Date()
+	dy, dm, dd := date.Date()
+	return ty == dy && tm == dm && td == dd
+}
+
+// time_of_transit_on_date calculates the transit time like time_of_transit
+// but, as the Python original does, searches the adjacent day when the result
+// does not fall on the requested date. event is used in the error message.
+func time_of_transit_on_date(observer Observer, date time.Time, zenith float64, direction SunDirection, event string) (time.Time, error) {
+	t, err := time_of_transit(observer, date, zenith, direction)
+	if err != nil {
+		return time.Time{}, err
+	}
+	if sameCalendarDay(t, date) {
+		return t, nil
+	}
+
+	adjacent := date.Add(-24 * time.Hour)
+	if t.Before(date) {
+		adjacent = date.Add(24 * time.Hour)
+	}
+	t, err = time_of_transit(observer, adjacent, zenith, direction)
+	if err != nil {
+		return time.Time{}, err
+	}
+	if !sameCalendarDay(t, date) {
+		return time.Time{}, fmt.Errorf("unable to find a %s time on the date specified", event)
+	}
+	return t, nil
+}
 
 // Calculate sunrise time.
 // Args:
@@ -595,9 +630,9 @@ var (
 //
 //	Date and time at which sunrise occurs.
 func Sunrise(observer Observer, date time.Time) (time.Time, error) {
-	t, err := time_of_transit(observer, date, 90.0+sunApperentRadius, SunDirectionRising)
+	t, err := time_of_transit_on_date(observer, date, 90.0+sunApperentRadius, SunDirectionRising, "sunrise")
 
-	if err != nil {
+	if errors.Is(err, errNoHourAngle) {
 		z := Zenith(observer, Noon(observer, date), true)
 		if z > 90.0 {
 			return time.Time{}, ErrAlwaysBelow
@@ -605,7 +640,7 @@ func Sunrise(observer Observer, date time.Time) (time.Time, error) {
 		return time.Time{}, ErrAlwaysAbove
 	}
 
-	return t, nil
+	return t, err
 }
 
 // Calculate sunset time.
@@ -630,15 +665,15 @@ func Sunrise(observer Observer, date time.Time) (time.Time, error) {
 //			date := today(tzinfo)
 //		}
 func Sunset(observer Observer, date time.Time) (time.Time, error) {
-	t, err := time_of_transit(observer, date, 90.0+sunApperentRadius, SunDirectionSetting)
-	if err != nil {
+	t, err := time_of_transit_on_date(observer, date, 90.0+sunApperentRadius, SunDirectionSetting, "sunset")
+	if errors.Is(err, errNoHourAngle) {
 		z := Zenith(observer, Noon(observer, date), true)
 		if z > 90.0 {
 			return time.Time{}, ErrAlwaysBelow
 		}
 		return time.Time{}, ErrAlwaysAbove
 	}
-	return t, nil
+	return t, err
 
 }
 
@@ -666,11 +701,11 @@ func Sunset(observer Observer, date time.Time) (time.Time, error) {
 //		date := today(tzinfo)
 //	}
 func Dusk(observer Observer, date time.Time, depression float64) (time.Time, error) {
-	t, err := time_of_transit(observer, date, 90.0+depression, SunDirectionSetting)
-	if err != nil {
+	t, err := time_of_transit_on_date(observer, date, 90.0+depression, SunDirectionSetting, "dusk")
+	if errors.Is(err, errNoHourAngle) {
 		return t, fmt.Errorf("sun never reaches %v degrees below the horizon, at this location", depression)
 	}
-	return t, nil
+	return t, err
 }
 
 // Calculate daylight start and end times.
@@ -756,16 +791,16 @@ func Twilight(observer Observer, date time.Time, direction SunDirection) (time.T
 		return time.Time{}, time.Time{}, err
 	}
 
-	end, err := Sunset(observer, date)
-	if err != nil {
-		return time.Time{}, time.Time{}, err
-	}
 	if direction == SunDirectionRising {
 		end, err := Sunrise(observer, date)
 		if err != nil {
 			return time.Time{}, time.Time{}, err
 		}
 		return start, end, nil
+	}
+	end, err := Sunset(observer, date)
+	if err != nil {
+		return time.Time{}, time.Time{}, err
 	}
 	return end, start, nil
 }

@@ -100,6 +100,9 @@ func TestDawn(t *testing.T) {
 		{args: args{observer: london, date: time.Date(2015, 12, 3, 0, 0, 0, 0, time.UTC), depression: DepressionAstronomical}, want: time.Date(2015, 12, 3, 5, 44, 0, 0, time.UTC)},
 		{args: args{observer: london, date: time.Date(2015, 12, 12, 0, 0, 0, 0, time.UTC), depression: DepressionAstronomical}, want: time.Date(2015, 12, 12, 5, 52, 0, 0, time.UTC)},
 		{args: args{observer: london, date: time.Date(2015, 12, 25, 0, 0, 0, 0, time.UTC), depression: DepressionAstronomical}, want: time.Date(2015, 12, 25, 6, 1, 0, 0, time.UTC)},
+		// near the date line the first transit estimate lands on the wrong day
+		// and must be corrected (value from the Python astral 3.2 reference)
+		{name: "date line", args: args{observer: Observer{Latitude: 78, Longitude: 179.9}, date: time.Date(2026, 11, 11, 0, 0, 0, 0, time.UTC), depression: DepressionCivil}, want: time.Date(2026, 11, 11, 22, 40, 43, 0, time.UTC)},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -140,6 +143,9 @@ func TestDusk(t *testing.T) {
 		// Astronomical
 		{args: args{observer: london, date: time.Date(2015, 12, 25, 0, 0, 0, 0, time.UTC), depression: DepressionAstronomical}, want: time.Date(2015, 12, 25, 17, 59, 0, 0, time.UTC)},
 		{args: args{observer: london, date: time.Date(2021, 30, 6, 0, 0, 0, 0, time.UTC), depression: DepressionAstronomical}, wantErr: true},
+		// near the date line the first transit estimate lands on the wrong day
+		// and must be corrected (value from the Python astral 3.2 reference)
+		{name: "date line", args: args{observer: Observer{Latitude: 78, Longitude: -179.9, Elevation: 1200}, date: time.Date(2024, 2, 29, 0, 0, 0, 0, time.UTC), depression: DepressionAstronomical}, want: time.Date(2024, 2, 29, 11, 3, 0, 0, time.UTC)},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -170,6 +176,10 @@ func TestSunrise(t *testing.T) {
 		{args: args{observer: london, date: time.Date(2015, 12, 3, 0, 0, 0, 0, time.UTC)}, want: time.Date(2015, 12, 3, 7, 46, 0, 0, time.UTC)},
 		{args: args{observer: london, date: time.Date(2015, 12, 12, 0, 0, 0, 0, time.UTC)}, want: time.Date(2015, 12, 12, 7, 56, 0, 0, time.UTC)},
 		{args: args{observer: london, date: time.Date(2015, 12, 25, 0, 0, 0, 0, time.UTC)}, want: time.Date(2015, 12, 25, 8, 5, 0, 0, time.UTC)},
+		// near the date line the first transit estimate lands on the wrong day
+		// and must be corrected (values from the Python astral 3.2 reference)
+		{name: "date line", args: args{observer: Observer{Latitude: 78, Longitude: 179.9, Elevation: 1200}, date: time.Date(2019, 8, 29, 0, 0, 0, 0, time.UTC)}, want: time.Date(2019, 8, 29, 13, 38, 47, 0, time.UTC)},
+		{name: "adjacent day retry", args: args{observer: Observer{Latitude: 69.6, Longitude: -105.2}, date: time.Date(2024, 2, 29, 0, 0, 0, 0, time.UTC)}, want: time.Date(2024, 2, 29, 14, 27, 57, 0, time.UTC)},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -200,6 +210,14 @@ func TestSunset(t *testing.T) {
 		{args: args{observer: london, date: time.Date(2015, 12, 3, 0, 0, 0, 0, time.UTC)}, want: time.Date(2015, 12, 3, 15, 54, 0, 0, time.UTC)},
 		{args: args{observer: london, date: time.Date(2015, 12, 12, 0, 0, 0, 0, time.UTC)}, want: time.Date(2015, 12, 12, 15, 51, 0, 0, time.UTC)},
 		{args: args{observer: london, date: time.Date(2015, 12, 25, 0, 0, 0, 0, time.UTC)}, want: time.Date(2015, 12, 25, 15, 55, 0, 0, time.UTC)},
+		// near the date line the first transit estimate lands on the wrong day
+		// and must be corrected (values from the Python astral 3.2 reference)
+		{name: "date line", args: args{observer: Observer{Latitude: -78, Longitude: -179.9}, date: time.Date(2019, 8, 29, 0, 0, 0, 0, time.UTC)}, want: time.Date(2019, 8, 29, 2, 56, 40, 0, time.UTC)},
+		// sunset exists neither on this day nor after searching the adjacent day
+		{name: "no sunset on date", wantErr: true, args: args{observer: Observer{Latitude: 69.6, Longitude: -105.2}, date: time.Date(2024, 2, 29, 0, 0, 0, 0, time.UTC)}},
+		// in a zone west of UTC the first estimate can land on the previous
+		// local day, so the search must move to the next day (astral 3.2 value)
+		{name: "previous local day retry", args: args{observer: Observer{Latitude: 51.5, Longitude: 179.9}, date: time.Date(2015, 12, 1, 0, 0, 0, 0, time.FixedZone("UTC-10", -10*3600))}, want: time.Date(2015, 12, 2, 3, 54, 29, 0, time.UTC)},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -247,13 +265,15 @@ func TestMidnight(t *testing.T) {
 		args args
 		want time.Time
 	}{
-		{args: args{observer: london, date: time.Date(2016, 2, 18, 0, 0, 0, 0, time.UTC)}, want: time.Date(2016, 2, 18, 0, 14, 0, 0, time.UTC)},
-		{args: args{observer: london, date: time.Date(2016, 10, 26, 0, 0, 0, 0, time.UTC)}, want: time.Date(2016, 10, 25, 23, 44, 0, 0, time.UTC)}, // TODO
+		// want values from the Python astral 3.2 reference implementation
+		{args: args{observer: london, date: time.Date(2016, 2, 18, 0, 0, 0, 0, time.UTC)}, want: time.Date(2016, 2, 18, 0, 14, 24, 0, time.UTC)},
+		{args: args{observer: london, date: time.Date(2016, 10, 26, 0, 0, 0, 0, time.UTC)}, want: time.Date(2016, 10, 25, 23, 44, 19, 0, time.UTC)},
+		{args: args{observer: london, date: time.Date(2016, 9, 15, 0, 0, 0, 0, time.UTC)}, want: time.Date(2016, 9, 14, 23, 55, 22, 0, time.UTC)},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := Midnight(tt.args.observer, tt.args.date)
-			almostEqualTime(t, got, tt.want, 60*time.Second)
+			almostEqualTime(t, got, tt.want, 2*time.Second)
 		})
 	}
 }
@@ -351,14 +371,18 @@ func TestElevation(t *testing.T) {
 		want    float64
 		wantErr bool
 	}{
-		{args: args{refraction: true, observer: london, date: time.Date(2015, 12, 14, 11, 0, 0, 0, time.UTC)}, want: 14.381311},
-		{args: args{refraction: true, observer: london, date: time.Date(2015, 12, 14, 20, 1, 0, 0, time.UTC)}, want: -37.3710156},
+		// want values from the Python astral 3.2 reference implementation
+		{args: args{refraction: true, observer: london, date: time.Date(2015, 12, 14, 11, 0, 0, 0, time.UTC)}, want: 14.381085},
+		{args: args{refraction: true, observer: london, date: time.Date(2015, 12, 14, 20, 1, 0, 0, time.UTC)}, want: -37.375495},
+		// seconds within a minute must change the result (were truncated away)
+		{args: args{refraction: true, observer: london, date: time.Date(2019, 8, 29, 19, 30, 0, 0, time.UTC)}, want: -6.021092},
+		{args: args{refraction: true, observer: london, date: time.Date(2019, 8, 29, 19, 30, 30, 0, time.UTC)}, want: -6.093339},
+		{args: args{refraction: true, observer: london, date: time.Date(2019, 8, 29, 19, 30, 59, 0, time.UTC)}, want: -6.163113},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := Elevation(tt.args.observer, tt.args.date, tt.args.refraction)
-			// TODO: too far off. Python code uses accuracy of 0.001
-			almostEqualFloat(t, got, tt.want, 0.005)
+			almostEqualFloat(t, got, tt.want, 0.001)
 		})
 	}
 }
@@ -374,14 +398,18 @@ func TestAzimuth(t *testing.T) {
 		want    float64
 		wantErr bool
 	}{
-		{args: args{observer: london, date: time.Date(2015, 12, 14, 11, 0, 0, 0, time.UTC)}, want: 166.9676},
-		{args: args{observer: london, date: time.Date(2015, 12, 14, 20, 1, 0, 0, time.UTC)}, want: 279.4093},
+		// want values from the Python astral 3.2 reference implementation
+		{args: args{observer: london, date: time.Date(2015, 12, 14, 11, 0, 0, 0, time.UTC)}, want: 166.974946},
+		{args: args{observer: london, date: time.Date(2015, 12, 14, 20, 1, 0, 0, time.UTC)}, want: 279.416954},
+		// seconds within a minute must change the result (were truncated away)
+		{args: args{observer: london, date: time.Date(2019, 8, 29, 19, 30, 0, 0, time.UTC)}, want: 293.169715},
+		{args: args{observer: london, date: time.Date(2019, 8, 29, 19, 30, 30, 0, time.UTC)}, want: 293.270788},
+		{args: args{observer: london, date: time.Date(2019, 8, 29, 19, 30, 59, 0, time.UTC)}, want: 293.368541},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := Azimuth(tt.args.observer, tt.args.date)
-			// TODO: too far off. Python code uses accuracy of 0.001
-			almostEqualFloat(t, got, tt.want, 0.01)
+			almostEqualFloat(t, got, tt.want, 0.001)
 		})
 	}
 }
@@ -398,13 +426,18 @@ func TestZenith(t *testing.T) {
 		want    float64
 		wantErr bool
 	}{
-		// {args: args{refraction: true, observer: london, date: time.Date(2019, 8, 29, 14, 34, 0, 0, time.UTC)}, want: 46}, // TODO: FIXME
-		{args: args{refraction: true, observer: london, date: time.Date(2020, 2, 3, 10, 37, 0, 0, time.UTC)}, want: 71},
+		// want values from the Python astral 3.2 reference implementation.
+		// The first case is Python's "2019-08-29 14:34 Europe/London" test case:
+		// 14:34 BST is 13:34 UTC (the old disabled version used 14:34 UTC).
+		{args: args{refraction: true, observer: london, date: time.Date(2019, 8, 29, 13, 34, 0, 0, time.UTC)}, want: 46.217065},
+		{args: args{refraction: true, observer: london, date: time.Date(2020, 2, 3, 10, 37, 0, 0, time.UTC)}, want: 71.303377},
+		// NREL SPA worked-example site and instant (Reda & Andreas 2004)
+		{args: args{refraction: true, observer: Observer{Latitude: 39.742476, Longitude: -105.1786, Elevation: 1830.14}, date: time.Date(2003, 10, 17, 19, 30, 30, 0, time.UTC)}, want: 50.108638},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := Zenith(tt.args.observer, tt.args.date, tt.args.refraction)
-			almostEqualFloat(t, got, tt.want, 0.5)
+			almostEqualFloat(t, got, tt.want, 0.001)
 		})
 	}
 }
@@ -427,6 +460,7 @@ func TestTimeAtElevation(t *testing.T) {
 		{args: args{direction: SunDirectionRising, elevation: 166, observer: london, date: time.Date(2016, 1, 4, 0, 0, 0, 0, time.UTC)}, want: time.Date(2016, 1, 4, 13, 20, 0, 0, time.UTC)},
 		{args: args{direction: SunDirectionRising, elevation: 186, observer: london, date: time.Date(2015, 12, 1, 0, 0, 0, 0, time.UTC)}, want: time.Date(2015, 12, 1, 16, 34, 0, 0, time.UTC)},
 		{args: args{direction: SunDirectionRising, elevation: -18, observer: london, date: time.Date(2016, 1, 4, 0, 0, 0, 0, time.UTC)}, want: time.Date(2016, 1, 4, 6, 0, 0, 0, time.UTC)},
+		{name: "date line", args: args{direction: SunDirectionRising, elevation: 10, observer: Observer{Latitude: -78, Longitude: 179.9}, date: time.Date(2026, 3, 20, 0, 0, 0, 0, time.UTC)}, want: time.Date(2026, 3, 20, 21, 55, 14, 0, time.UTC)},
 		// Setting
 		{args: args{direction: SunDirectionSetting, elevation: 14, observer: london, date: time.Date(2016, 1, 4, 0, 0, 0, 0, time.UTC)}, want: time.Date(2016, 1, 4, 13, 20, 0, 0, time.UTC)},
 		// Error
