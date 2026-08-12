@@ -1,9 +1,10 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
-	"log"
+	"io"
 	"math"
 	"os"
 	"sort"
@@ -26,27 +27,45 @@ const (
 )
 
 func main() {
+	os.Exit(run(os.Args[1:], os.Stdout, os.Stderr))
+}
+
+// run executes the CLI, writing normal output to stdout and diagnostics
+// (non-fatal event errors, flag usage, fatal errors) to stderr, and
+// returning the process exit code. It never calls os.Exit itself so it
+// can be exercised directly from tests.
+func run(args []string, stdout, stderr io.Writer) int {
+	fs := flag.NewFlagSet("astral", flag.ContinueOnError)
+	fs.SetOutput(stderr)
+
 	var (
-		timeFlag      = flag.String("time", time.Now().Format(time.RFC3339), "Day/time used for the calculation.")
-		latFlag       = flag.Float64("lat", 0, "Latitude of the observer. Northern latitudes should be positive.")
-		longFlag      = flag.Float64("long", 0, "Longitude of the observer. Eastern longitudes should be positive.")
-		elevationFlag = flag.Float64("elev", 0, "Elevation and/or distance to nearest obscuring feature in metres above/below the location")
-		versionFlag   = flag.Bool("version", false, fmt.Sprintf("Print version information of this release (%v).", version))
+		timeFlag      = fs.String("time", time.Now().Format(time.RFC3339), "Day/time used for the calculation.")
+		latFlag       = fs.Float64("lat", 0, "Latitude of the observer. Northern latitudes should be positive.")
+		longFlag      = fs.Float64("long", 0, "Longitude of the observer. Eastern longitudes should be positive.")
+		elevationFlag = fs.Float64("elev", 0, "Elevation and/or distance to nearest obscuring feature in metres above/below the location")
+		versionFlag   = fs.Bool("version", false, fmt.Sprintf("Print version information of this release (%v).", version))
 	)
-	flag.Parse()
+	if err := fs.Parse(args); err != nil {
+		// fs already wrote the error and usage to stderr.
+		if errors.Is(err, flag.ErrHelp) {
+			return 0
+		}
+		return 2
+	}
 
 	if *versionFlag {
-		fmt.Printf("version: %v\n", version)
-		fmt.Printf("commit: %v\n", commit)
-		fmt.Printf("date: %v\n", date)
-		os.Exit(0)
+		fmt.Fprintf(stdout, "version: %v\n", version)
+		fmt.Fprintf(stdout, "commit: %v\n", commit)
+		fmt.Fprintf(stdout, "date: %v\n", date)
+		return 0
 	}
 
 	observer := astral.Observer{Latitude: *latFlag, Longitude: *longFlag, Elevation: *elevationFlag}
 
 	t, err := time.Parse(time.RFC3339, *timeFlag)
 	if err != nil {
-		log.Fatalf("failed parsing time: %v\n", err)
+		fmt.Fprintf(stderr, "failed parsing time: %v\n", err)
+		return 1
 	}
 
 	var events []event
@@ -54,7 +73,7 @@ func main() {
 	// case the event never occurred and its zero-value time must not be shown).
 	addEvent := func(at time.Time, err error, color aurora.Value, desc string) {
 		if err != nil {
-			log.Println(err)
+			fmt.Fprintln(stderr, err)
 			return
 		}
 		events = append(events, event{t: at, color: color, desc: desc})
@@ -80,7 +99,7 @@ func main() {
 
 	sunriseNextDay, sunriseNextDayErr := astral.Sunrise(observer, t.Add(24*time.Hour))
 	if sunriseNextDayErr != nil {
-		log.Println(sunriseNextDayErr)
+		fmt.Fprintln(stderr, sunriseNextDayErr)
 	}
 
 	noon := astral.Noon(observer, t)
@@ -108,27 +127,30 @@ func main() {
 	moonPhase := astral.MoonPhase(t)
 	moonDesc, err := astral.MoonPhaseDescription(moonPhase)
 	if err != nil {
-		log.Fatalf("failed parsing moon phase: %v", err)
+		fmt.Fprintf(stderr, "failed parsing moon phase: %v\n", err)
+		return 1
 	}
 
 	sort.Slice(events, func(i, j int) bool { return events[i].t.Before(events[j].t) })
 
-	fmt.Printf("Date/Time\t%v\n", t.Format(time.UnixDate))
-	fmt.Printf("Latitude\t%v\nLongitude\t%v\nElevation\t%v\n", *latFlag, *longFlag, *elevationFlag)
-	fmt.Println()
+	fmt.Fprintf(stdout, "Date/Time\t%v\n", t.Format(time.UnixDate))
+	fmt.Fprintf(stdout, "Latitude\t%v\nLongitude\t%v\nElevation\t%v\n", *latFlag, *longFlag, *elevationFlag)
+	fmt.Fprintln(stdout)
 	if sunriseErr != nil || sunsetErr != nil {
-		fmt.Println("Daylight\tn/a")
+		fmt.Fprintln(stdout, "Daylight\tn/a")
 	} else {
-		fmt.Printf("Daylight\t%v\n", sunset.Sub(sunrise).Truncate(1*time.Second))
+		fmt.Fprintf(stdout, "Daylight\t%v\n", sunset.Sub(sunrise).Truncate(1*time.Second))
 	}
 	if sunsetErr != nil || sunriseNextDayErr != nil {
-		fmt.Println("Night-Time\tn/a")
+		fmt.Fprintln(stdout, "Night-Time\tn/a")
 	} else {
-		fmt.Printf("Night-Time\t%v\n", sunriseNextDay.Sub(sunset).Truncate(1*time.Second))
+		fmt.Fprintf(stdout, "Night-Time\t%v\n", sunriseNextDay.Sub(sunset).Truncate(1*time.Second))
 	}
-	fmt.Printf("Moon Phase\t%v (%v)\n", moonDesc, moonPhase)
-	fmt.Println()
-	printEvents(events, t)
+	fmt.Fprintf(stdout, "Moon Phase\t%v (%v)\n", moonDesc, moonPhase)
+	fmt.Fprintln(stdout)
+	printEvents(stdout, events, t)
+
+	return 0
 }
 
 const (
@@ -136,7 +158,7 @@ const (
 	timeFormat     = "15:04"
 )
 
-func printEvents(events []event, t time.Time) {
+func printEvents(w io.Writer, events []event, t time.Time) {
 	lastColor := aurora.BgBlack(" ")
 	for _, ev := range events {
 		// calculate when the particular phase happend or will happen
@@ -161,12 +183,12 @@ func printEvents(events []event, t time.Time) {
 			midDashes := strings.Repeat("┈", len(agoOrUntil)+2)
 			tStr := ev.t.Truncate(1 * time.Minute).Format(timeFormat)
 
-			fmt.Printf("%v %v %v %v %v\n", prefixDashes, tStr, midDashes, lastColor, ev.desc)
+			fmt.Fprintf(w, "%v %v %v %v %v\n", prefixDashes, tStr, midDashes, lastColor, ev.desc)
 			continue
 		}
 
 		lastColor = ev.color
-		fmt.Printf("%v (%v) %v %v\n", ev.t.Format(dateTimeFormat), agoOrUntil, ev.color, ev.desc)
+		fmt.Fprintf(w, "%v (%v) %v %v\n", ev.t.Format(dateTimeFormat), agoOrUntil, ev.color, ev.desc)
 	}
 }
 
