@@ -1,15 +1,19 @@
 name: Go
 on:
-  pull_request:
-    paths:
+  push:
+    branches:
+      - main
+    paths: &go-paths
       - go.sum
       - go.mod
       - "**.go"
       - .github/workflows/go.yaml
+  pull_request:
+    paths: *go-paths
 jobs:
   build:
     name: Test
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Check out code into the Go module directory
         uses: actions/checkout@v7
